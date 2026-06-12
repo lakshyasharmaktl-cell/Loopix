@@ -10,13 +10,14 @@ export default function App() {
   return (
     <div>
       <BrowserRouter>
-      <Navbar/>
-      <Routes>
-        <Route path='signup' element = {Sign}/>
-        <Route path='signup' element = {Login}/>
-        <Route path='chats' element = {Chats}/>
-        <Route path='friends' element = {Friends}/>
-      </Routes>
+        <Navbar />
+        <Routes>
+          <Route path="/signup" element={<Sign />} />
+          <Route path='/login' element={<Login/>} />
+          <Route path='/otp-verify' element={<Otpsection/>} />
+          <Route path='chats' element={Chats} />
+          <Route path='friends' element={Friends} />
+        </Routes>
       </BrowserRouter>
     </div>
   )
