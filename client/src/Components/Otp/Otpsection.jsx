@@ -1,22 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaEnvelope, FaCheckCircle, FaTimesCircle, FaRedoAlt, FaArrowLeft, FaKey } from 'react-icons/fa';
+import { FaEnvelope, FaCheckCircle, FaTimesCircle, FaRedoAlt, FaArrowLeft } from 'react-icons/fa';
+import { MdVerified } from 'react-icons/md';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import BASE_URL from '../../global_url.js';
 
-// Loopix mark component
 function LoopixMark({ size = 44 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="lmG" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FF5555" />
-          <stop offset="100%" stopColor="#AA0000" />
+        <linearGradient id="lmGOtp2" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ef4444" />
+          <stop offset="100%" stopColor="#991b1b" />
         </linearGradient>
       </defs>
-      <path d="M 68.2 69.2 A 26 26 0 1 1 68.2 30.8" fill="none" stroke="url(#lmG)" strokeWidth="10" strokeLinecap="round" />
-      <path d="M 61 38 A 16 16 0 1 1 61 62" fill="none" stroke="#CC2222" strokeWidth="3.5" strokeLinecap="round" opacity="0.6" />
-      <circle cx="68.2" cy="69.2" r="5.5" fill="#FF4444" />
-      <circle cx="68.2" cy="69.2" r="2.5" fill="#100000" />
+      <path d="M 68.2 69.2 A 26 26 0 1 1 68.2 30.8" fill="none" stroke="url(#lmGOtp2)" strokeWidth="10" strokeLinecap="round" />
+      <path d="M 61 38 A 16 16 0 1 1 61 62" fill="none" stroke="#dc2626" strokeWidth="3.5" strokeLinecap="round" opacity="0.5" />
+      <circle cx="68.2" cy="69.2" r="5.5" fill="#ef4444" />
+      <circle cx="68.2" cy="69.2" r="2.5" fill="#fff" />
     </svg>
   );
 }
@@ -24,307 +27,223 @@ function LoopixMark({ size = 44 }) {
 export default function OtpSection() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const { id } = useParams();
+
+  // 4-digit OTP to match server (Math.floor(1000 + Math.random() * 9000))
+  const [otp, setOtp] = useState(['', '', '', '']);
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(300);
   const [canResend, setCanResend] = useState(false);
   const inputRefs = useRef([]);
 
-  // Get email from location state or localStorage
   useEffect(() => {
     const userEmail = location.state?.email || localStorage.getItem('otp_email');
     if (userEmail) {
       setEmail(userEmail);
-    } else {
-      // If no email, redirect to login
-      setError('Session expired. Please login again.');
-      setTimeout(() => navigate('/login'), 2000);
+      localStorage.setItem('otp_email', userEmail);
+    } else if (!id) {
+      setError('Session expired. Please register again.');
+      setTimeout(() => navigate('/signup'), 2000);
     }
-  }, [location, navigate]);
+  }, [location, navigate, id]);
 
-  // Timer countdown
   useEffect(() => {
-    if (timeLeft <= 0) {
-      setCanResend(true);
-      return;
-    }
-    
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
-    
+    if (timeLeft <= 0) { setCanResend(true); return; }
+    const timer = setInterval(() => setTimeLeft(p => p - 1), 1000);
     return () => clearInterval(timer);
   }, [timeLeft]);
 
-  // Format time
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
-  // Handle OTP input change
   const handleOtpChange = (index, value) => {
-    // Allow only numbers
     if (value && !/^\d*$/.test(value)) return;
-    
     const newOtp = [...otp];
-    newOtp[index] = value.slice(-1); // Take only last character
+    newOtp[index] = value.slice(-1);
     setOtp(newOtp);
-    
-    // Auto-focus next input
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
+    if (value && index < 3) inputRefs.current[index + 1]?.focus();
   };
 
-  // Handle key press for backspace
   const handleKeyDown = (index, e) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
   };
 
-  // Handle paste event
   const handlePaste = (e) => {
     e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').slice(0, 6);
+    const pastedData = e.clipboardData.getData('text').slice(0, 4);
     if (/^\d+$/.test(pastedData)) {
-      const otpArray = pastedData.split('');
+      const arr = pastedData.split('');
       const newOtp = [...otp];
-      for (let i = 0; i < Math.min(otpArray.length, 6); i++) {
-        newOtp[i] = otpArray[i];
-      }
+      for (let i = 0; i < Math.min(arr.length, 4); i++) newOtp[i] = arr[i];
       setOtp(newOtp);
-      // Focus last filled input
-      const lastIndex = Math.min(otpArray.length, 6) - 1;
-      if (lastIndex >= 0) {
-        inputRefs.current[lastIndex]?.focus();
-      }
+      const last = Math.min(arr.length, 4) - 1;
+      if (last >= 0) inputRefs.current[last]?.focus();
     }
   };
 
-  // Verify OTP
   const handleVerifyOtp = async () => {
     const otpValue = otp.join('');
-    if (otpValue.length !== 6) {
-      setError('Please enter the 6-digit verification code');
+    if (otpValue.length !== 4) {
+      setError('Please enter the complete 4-digit code');
       return;
     }
-
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
+    setLoading(true); setError(''); setSuccess('');
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      
-      const response = await fetch(`${API_URL}/auth/verify-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-          otp: otpValue,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid OTP. Please try again.');
-      }
-
-      // Store user data and token
-      if (data.token) {
-        localStorage.setItem('auth_token', data.token);
-      }
-      if (data.user) {
-        localStorage.setItem('loopix_user', JSON.stringify(data.user));
-      }
-      
-      // Clear OTP email from storage
+      const res = await axios.post(`${BASE_URL}/verify-otp/${id}`, { otp: otpValue });
+      if (!res.data.status) throw new Error(res.data.msg);
       localStorage.removeItem('otp_email');
-      
-      setSuccess('Verification successful! Redirecting...');
-      
-      // Redirect after short delay
-      setTimeout(() => {
-        navigate('/chats');
-      }, 1500);
-
+      setSuccess('Account verified! Redirecting...');
+      toast.success('Account verified successfully! 🎉');
+      setTimeout(() => navigate('/login'), 1500);
     } catch (err) {
-      console.error('OTP verification error:', err);
-      setError(err.message || 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+      const msg = err.response?.data?.msg || err.message || 'Something went wrong.';
+      setError(msg); toast.error(msg);
+    } finally { setLoading(false); }
   };
 
-  // Resend OTP
   const handleResendOtp = async () => {
-    if (!canResend && timeLeft > 0) {
-      setError(`Please wait ${formatTime(timeLeft)} before requesting a new code`);
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
+    if (!canResend && timeLeft > 0) { setError(`Wait ${formatTime(timeLeft)} before resending`); return; }
+    setLoading(true); setError(''); setSuccess('');
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      
-      const response = await fetch(`${API_URL}/auth/resend-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: email,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to resend OTP. Please try again.');
-      }
-
-      // Reset timer
-      setTimeLeft(300);
-      setCanResend(false);
-      setOtp(['', '', '', '', '', '']);
-      setSuccess('Verification code resent! Please check your email.');
-      
-      // Focus first input
+      await axios.post(`${BASE_URL}/register`, { email });
+      setTimeLeft(300); setCanResend(false);
+      setOtp(['', '', '', '']);
+      setSuccess('New code sent! Check your email.');
+      toast.success('OTP resent 📧');
       inputRefs.current[0]?.focus();
-
     } catch (err) {
-      console.error('Resend OTP error:', err);
-      setError(err.message || 'Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+      const msg = err.response?.data?.msg || 'Failed to resend.';
+      setError(msg); toast.error(msg);
+    } finally { setLoading(false); }
   };
 
-  // Handle go back to login
-  const handleGoBack = () => {
-    localStorage.removeItem('otp_email');
-    navigate('/login');
-  };
+  const allFilled = otp.every(d => d !== '');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center font-sans relative overflow-hidden p-8">
-      {/* Decorative background elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-red-100 rounded-full blur-3xl opacity-40 -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-rose-100 rounded-full blur-3xl opacity-40 translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-red-50 rounded-full blur-3xl opacity-20 pointer-events-none" />
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(145deg, #fafaf9 0%, #f5f3f0 50%, #fdf8f8 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: "'Inter','Segoe UI',sans-serif",
+      padding: '2rem 1rem', position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Soft background blobs */}
+      <div style={{ position:'fixed', top:'-80px', right:'-80px', width:'320px', height:'320px', background:'radial-gradient(circle, rgba(220,38,38,0.07) 0%, transparent 70%)', borderRadius:'50%', pointerEvents:'none' }} />
+      <div style={{ position:'fixed', bottom:'-80px', left:'-80px', width:'280px', height:'280px', background:'radial-gradient(circle, rgba(220,38,38,0.05) 0%, transparent 70%)', borderRadius:'50%', pointerEvents:'none' }} />
 
-      {/* Card */}
       <motion.div
-        initial={{ opacity: 0, y: 28, scale: 0.97 }}
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-xl overflow-hidden"
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        style={{
+          width: '100%', maxWidth: '400px',
+          background: '#fff',
+          borderRadius: '24px',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.03), 0 20px 60px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.06)',
+          overflow: 'hidden',
+        }}
       >
-        {/* Top shimmer line */}
-        <div className="h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-70" />
+        {/* Red top accent bar */}
+        <div style={{ height: '3px', background: 'linear-gradient(90deg, #ef4444, #dc2626, #ef4444)' }} />
 
-        <div className="p-8 sm:p-10">
+        <div style={{ padding: '2.25rem 2rem' }}>
           {/* Logo */}
-          <div className="flex flex-col items-center mb-6">
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:'1.75rem' }}>
             <motion.div
-              animate={{ rotate: [0, 7, -7, 0] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-              className="mb-3"
+              animate={{ rotate: [0, 6, -6, 0] }}
+              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
+              style={{ marginBottom: '0.625rem' }}
             >
-              <LoopixMark size={52} />
+              <LoopixMark size={50} />
             </motion.div>
-            <span className="text-3xl font-black tracking-tight bg-gradient-to-r from-gray-900 via-red-700 to-red-600 bg-clip-text text-transparent">
-              LOOPIX
-            </span>
-            <span className="mt-1.5 text-xs font-semibold text-gray-500 tracking-[3px]">
+            <span style={{
+              fontSize: '1.625rem', fontWeight: '900', letterSpacing: '4px',
+              background: 'linear-gradient(90deg, #1a1a1a, #dc2626)',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            }}>LOOPIX</span>
+            <span style={{ marginTop: '0.25rem', fontSize: '0.6rem', fontWeight: '700', color: '#9ca3af', letterSpacing: '3px' }}>
               VERIFY YOUR ACCOUNT
             </span>
           </div>
 
-          {/* Info message */}
-          <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-xl">
-            <div className="flex items-center gap-2 text-blue-700 text-sm">
-              <FaEnvelope className="text-blue-500" />
-              <span className="font-medium">Verification code sent to:</span>
-              <span className="font-bold">{email}</span>
+          {/* Email pill */}
+          {email && (
+            <div style={{
+              marginBottom: '1.25rem', padding: '0.625rem 0.875rem',
+              background: '#eff6ff', border: '1px solid #bfdbfe',
+              borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '0.5rem',
+            }}>
+              <FaEnvelope style={{ color: '#3b82f6', fontSize: '0.8rem', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.78rem', color: '#1d4ed8', fontWeight: '500' }}>
+                Code sent to <strong>{email}</strong>
+              </span>
             </div>
-          </div>
+          )}
 
-          {/* Error/Success Messages */}
+          {/* Messages */}
           <AnimatePresence>
             {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-red-600 text-sm font-medium"
-              >
-                <FaTimesCircle className="text-red-500 flex-shrink-0" />
-                <span>{error}</span>
+              <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }}
+                style={{ marginBottom:'0.875rem', padding:'0.6rem 0.875rem', background:'#fef2f2', border:'1px solid #fecaca', borderRadius:'10px', color:'#dc2626', fontSize:'0.8rem', display:'flex', alignItems:'center', gap:'0.5rem' }}>
+                <FaTimesCircle style={{ flexShrink:0 }} /> <span>{error}</span>
               </motion.div>
             )}
             {success && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl flex items-center gap-2 text-green-600 text-sm font-medium"
-              >
-                <FaCheckCircle className="text-green-500 flex-shrink-0" />
-                <span>{success}</span>
+              <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }}
+                style={{ marginBottom:'0.875rem', padding:'0.6rem 0.875rem', background:'#f0fdf4', border:'1px solid #bbf7d0', borderRadius:'10px', color:'#16a34a', fontSize:'0.8rem', display:'flex', alignItems:'center', gap:'0.5rem' }}>
+                <FaCheckCircle style={{ flexShrink:0 }} /> <span>{success}</span>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* OTP Input Fields */}
-          <div className="mb-6">
-            <label className="block mb-3 text-xs font-bold text-gray-600 tracking-wide text-center">
-              ENTER 6-DIGIT CODE
+          {/* 4-digit OTP inputs */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display:'block', textAlign:'center', marginBottom:'1rem', fontSize:'0.7rem', fontWeight:'700', color:'#9ca3af', letterSpacing:'2px' }}>
+              ENTER 4-DIGIT CODE
             </label>
-            <div className="flex justify-center gap-2 sm:gap-3" onPaste={handlePaste}>
+            <div style={{ display:'flex', justifyContent:'center', gap:'0.75rem' }} onPaste={handlePaste}>
               {otp.map((digit, index) => (
-                <input
+                <motion.input
                   key={index}
                   ref={(el) => inputRefs.current[index] = el}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
+                  type="text" inputMode="numeric" maxLength={1}
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
-                  className="w-12 h-12 sm:w-14 sm:h-14 text-center text-xl font-bold bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-400/50 focus:border-red-300 transition-all duration-200"
                   disabled={loading}
+                  whileFocus={{ scale: 1.05 }}
+                  style={{
+                    width: '64px', height: '68px',
+                    textAlign: 'center', fontSize: '1.75rem', fontWeight: '800',
+                    background: digit ? '#fef2f2' : '#fafafa',
+                    border: digit ? '2px solid #ef4444' : '2px solid #e5e7eb',
+                    borderRadius: '16px',
+                    color: digit ? '#dc2626' : '#374151',
+                    transition: 'all 0.15s ease',
+                    outline: 'none', cursor: 'text',
+                    boxShadow: digit ? '0 4px 12px rgba(220,38,38,0.12)' : '0 1px 3px rgba(0,0,0,0.04)',
+                  }}
                 />
               ))}
             </div>
           </div>
 
-          {/* Timer and Resend */}
-          <div className="text-center mb-6">
+          {/* Timer */}
+          <div style={{ textAlign:'center', marginBottom:'1.5rem' }}>
             {!canResend && timeLeft > 0 ? (
-              <p className="text-sm text-gray-500">
-                Code expires in <span className="font-bold text-red-600">{formatTime(timeLeft)}</span>
+              <p style={{ fontSize:'0.8rem', color:'#9ca3af' }}>
+                Code expires in{' '}
+                <span style={{ color:'#dc2626', fontWeight:'700' }}>{formatTime(timeLeft)}</span>
               </p>
             ) : (
-              <button
-                onClick={handleResendOtp}
-                disabled={loading}
-                className="text-sm text-red-600 hover:text-red-700 font-semibold flex items-center justify-center gap-2 mx-auto transition-colors"
-              >
-                <FaRedoAlt className="text-xs" />
-                Resend verification code
+              <button onClick={handleResendOtp} disabled={loading}
+                style={{ background:'none', border:'none', fontSize:'0.8rem', color:'#dc2626', fontWeight:'700', cursor:'pointer', display:'flex', alignItems:'center', gap:'0.4rem', margin:'0 auto' }}>
+                <FaRedoAlt style={{ fontSize:'0.7rem' }} /> Resend code
               </button>
             )}
           </div>
@@ -334,50 +253,55 @@ export default function OtpSection() {
             onClick={handleVerifyOtp}
             whileHover={!loading ? { scale: 1.02 } : {}}
             whileTap={!loading ? { scale: 0.98 } : {}}
-            disabled={loading}
-            className={`w-full py-3.5 rounded-xl font-extrabold text-white text-sm tracking-wide flex items-center justify-center gap-2 transition-all duration-200 ${
-              loading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-red-600 to-red-700 hover:shadow-lg hover:shadow-red-200 active:scale-[0.98]'
-            }`}
+            disabled={loading || !allFilled}
+            style={{
+              width: '100%', padding: '0.875rem',
+              borderRadius: '14px', border: 'none',
+              fontWeight: '800', color: '#fff', fontSize: '0.9rem', letterSpacing: '0.5px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              cursor: loading || !allFilled ? 'not-allowed' : 'pointer',
+              background: loading || !allFilled
+                ? '#d1d5db'
+                : 'linear-gradient(135deg, #ef4444, #dc2626)',
+              boxShadow: loading || !allFilled ? 'none' : '0 6px 20px rgba(220,38,38,0.3)',
+              transition: 'all 0.2s ease',
+            }}
           >
             {loading ? (
               <>
-                <motion.span
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 0.75, repeat: Infinity, ease: "linear" }}
-                  className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white"
-                />
+                <motion.span animate={{ rotate: 360 }} transition={{ duration: 0.75, repeat: Infinity, ease: 'linear' }}
+                  style={{ display:'inline-block', width:'16px', height:'16px', borderRadius:'50%', border:'2px solid rgba(255,255,255,0.35)', borderTopColor:'#fff' }} />
                 Verifying...
               </>
             ) : (
-              <>
-                <FaKey className="text-sm" />
-                Verify & Continue
-               
-              </>
+              <><MdVerified style={{ fontSize:'1rem' }} /> Verify &amp; Continue</>
             )}
           </motion.button>
 
-          {/* Back to Login */}
-          <button
-            onClick={handleGoBack}
+          {/* Back */}
+          <button onClick={() => { localStorage.removeItem('otp_email'); navigate('/login'); }}
             disabled={loading}
-            className="w-full mt-3 py-2.5 rounded-xl font-semibold text-gray-600 text-sm border border-gray-200 bg-white/50 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2"
-          >
-            <FaArrowLeft className="text-xs" />
-            Back to Login
+            style={{
+              width:'100%', marginTop:'0.75rem', padding:'0.75rem',
+              borderRadius:'14px', border:'1.5px solid #e5e7eb',
+              background:'transparent', color:'#6b7280',
+              fontSize:'0.825rem', fontWeight:'600', cursor:'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center', gap:'0.4rem',
+              transition:'all 0.2s ease',
+            }}>
+            <FaArrowLeft style={{ fontSize:'0.7rem' }} /> Back to Login
           </button>
 
-          {/* Help Text */}
-          <p className="text-center text-xs text-gray-400 mt-6">
-            Didn't receive the code? Check your spam folder or contact support
+          <p style={{ textAlign:'center', fontSize:'0.72rem', color:'#c4c4c4', marginTop:'1.25rem' }}>
+            Didn't receive the code? Check your spam folder.
           </p>
         </div>
-
-        {/* Bottom shimmer line */}
-        <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
       </motion.div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        input:focus { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239,68,68,0.12) !important; }
+      `}</style>
     </div>
   );
 }

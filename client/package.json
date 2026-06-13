@@ -11,13 +11,17 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
+    "axios": "^1.17.0",
     "framer-motion": "^12.40.0",
     "install": "^0.13.0",
+    "lucide-react": "^1.18.0",
     "npm": "^11.16.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-icons": "^5.6.0",
     "react-router-dom": "^7.17.0",
+    "react-toastify": "^11.1.0",
+    "socket.io-client": "^4.8.3",
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {

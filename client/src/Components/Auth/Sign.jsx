@@ -1,310 +1,366 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowRight,
-} from "react-icons/fa";
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { useNavigate, Link } from "react-router-dom";
+import BASE_URL from "../../global_url.js";
 
-/* ─── Loopix mark ─── */
-function LoopixMark({ size = 44 }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="lmG" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#FF5555" />
-          <stop offset="100%" stopColor="#AA0000" />
-        </linearGradient>
-      </defs>
-      <path d="M 68.2 69.2 A 26 26 0 1 1 68.2 30.8" fill="none" stroke="url(#lmG)" strokeWidth="10" strokeLinecap="round" />
-      <path d="M 61 38 A 16 16 0 1 1 61 62" fill="none" stroke="#CC2222" strokeWidth="3.5" strokeLinecap="round" opacity="0.6" />
-      <circle cx="68.2" cy="69.2" r="5.5" fill="#FF4444" />
-      <circle cx="68.2" cy="69.2" r="2.5" fill="#100000" />
-    </svg>
-  );
-}
-
-/* ─── password strength helper ─── */
-function strengthOf(pw) {
-  if (!pw) return 0;
-  let s = 0;
-  if (pw.length >= 6) s++;
-  if (pw.length >= 10) s++;
-  if (/[A-Z]/.test(pw) || /[0-9]/.test(pw) || /[^a-zA-Z0-9]/.test(pw)) s++;
-  return Math.min(s, 3);
-}
-const STRENGTH_LABEL = ["", "Weak", "Fair", "Strong"];
-const STRENGTH_COLOR = ["", "#DC2626", "#F59E0B", "#10B981"];
-
-export default function SignUp() {
+export default function Signup() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ username: "", email: "", password: "", confirm: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    gender: "",
+    password: "",
+    confirmPassword: "",
+  });
+
   const [showPass, setShowPass] = useState(false);
-  const [showConf, setShowConf] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [apiError, setApiError] = useState("");
 
-  const validate = () => {
-    const e = {};
-    if (!form.username.trim()) e.username = "Username is required";
-    else if (form.username.length < 3) e.username = "At least 3 characters";
-    if (!form.email.trim()) e.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Enter a valid email";
-    if (!form.password) e.password = "Password is required";
-    else if (form.password.length < 6) e.password = "At least 6 characters";
-    if (form.confirm !== form.password) e.confirm = "Passwords don't match";
-    return e;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const onChange = (field) => (ev) => {
-    setForm(f => ({ ...f, [field]: ev.target.value }));
-    setErrors(e => ({ ...e, [field]: undefined }));
-    setApiError(""); // Clear API error on input change
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const onSubmit = async (ev) => {
-    ev.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { 
-      setErrors(errs); 
-      return; 
+    if (!formData.name || !formData.email || !formData.password || !formData.gender) {
+      toast.warning("All fields are required to join the club 🎉");
+      return;
     }
-    
+
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match!");
+      return;
+    }
+
     setLoading(true);
-    setApiError("");
-    
     try {
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      
-      const response = await fetch(`${API_URL}/auth/signup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: form.username,
-          email: form.email,
-          password: form.password,
-        }),
+      const response = await axios.post(`${BASE_URL}/register`, formData);
+      toast.success(response?.data?.msg || "OTP sent to your email");
+      navigate(`/otp-verify/${response?.data?.id}`, {
+        state: { email: response?.data?.email }
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Signup failed. Please try again.');
-      }
-
-      // Store email for OTP verification
-      localStorage.setItem('otp_email', form.email);
-      
-      // Navigate to OTP verification page
-      navigate('/otp-verify', { 
-        state: { 
-          email: form.email,
-          message: 'Verification code sent to your email!'
-        } 
-      });
-
     } catch (err) {
-      console.error('Signup error:', err);
-      setApiError(err.message || 'Something went wrong. Please try again.');
+      toast.error(err.response?.data?.msg || "Server error. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const strength = strengthOf(form.password);
-
-  const fields = [
-    { key: "username", label: "Username", icon: <FaUser />, type: "text", placeholder: "your_handle" },
-    { key: "email", label: "Email address", icon: <FaEnvelope />, type: "email", placeholder: "you@example.com" },
-    {
-      key: "password", label: "Password", icon: <FaLock />,
-      type: showPass ? "text" : "password",
-      placeholder: "Min 6 characters",
-      toggle: () => setShowPass(p => !p), showing: showPass,
-    },
-    {
-      key: "confirm", label: "Confirm password", icon: <FaLock />,
-      type: showConf ? "text" : "password",
-      placeholder: "Repeat your password",
-      toggle: () => setShowConf(p => !p), showing: showConf,
-    },
-  ];
+  const googleLoginApi = () => {
+    try {
+      window.location.href = `${BASE_URL}/auth/google`;
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center font-sans relative overflow-hidden p-8">
-      {/* Decorative background elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-red-100 rounded-full blur-3xl opacity-40 -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-rose-100 rounded-full blur-3xl opacity-40 translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-red-50 rounded-full blur-3xl opacity-20 pointer-events-none" />
+    <div style={{
+      minHeight: "100vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%)",
+      padding: "2rem 1rem",
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+    }}>
+      {/* Background blobs */}
+      <div style={{
+        position: "fixed", top: "-100px", right: "-100px",
+        width: "400px", height: "400px",
+        background: "radial-gradient(circle, rgba(220,38,38,0.06) 0%, transparent 70%)",
+        borderRadius: "50%", pointerEvents: "none"
+      }} />
+      <div style={{
+        position: "fixed", bottom: "-100px", left: "-100px",
+        width: "350px", height: "350px",
+        background: "radial-gradient(circle, rgba(220,38,38,0.04) 0%, transparent 70%)",
+        borderRadius: "50%", pointerEvents: "none"
+      }} />
 
-      {/* Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 28, scale: 0.97 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.45, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-xl overflow-hidden"
-      >
-        {/* Top shimmer line */}
-        <div className="h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-70" />
+      <div style={{
+        display: "flex",
+        width: "100%",
+        maxWidth: "1000px",
+        background: "rgba(255, 255, 255, 0.8)",
+        border: "1px solid rgba(0, 0, 0, 0.06)",
+        borderRadius: "24px",
+        overflow: "hidden",
+        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)",
+        backdropFilter: "blur(20px)",
+      }}>
 
-        <div className="p-8 sm:p-10">
-          {/* Logo */}
-          <div className="flex flex-col items-center mb-8">
-            <motion.div
-              animate={{ rotate: [0, 7, -7, 0] }}
-              transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-              className="mb-3"
-            >
-              <LoopixMark size={52} />
-            </motion.div>
-            <span className="text-3xl font-black tracking-tight bg-gradient-to-r from-gray-900 via-red-700 to-red-600 bg-clip-text text-transparent">
-              LOOPIX
-            </span>
-            <span className="mt-1.5 text-xs font-semibold text-gray-500 tracking-[3px]">
-              CREATE YOUR ACCOUNT
-            </span>
-          </div>
+        {/* Left Panel */}
+        <div style={{
+          display: "none",
+          width: "45%",
+          background: "linear-gradient(145deg, #fef2f2, #fee2e2)",
+          padding: "3rem",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          borderRight: "1px solid rgba(0, 0, 0, 0.05)",
+          position: "relative",
+          overflow: "hidden",
+        }} className="signup-left-panel">
+          {/* Animated rings */}
+          <div style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%,-50%)",
+            width: "300px", height: "300px",
+            border: "1px solid rgba(220,38,38,0.06)",
+            borderRadius: "50%", animation: "spin 20s linear infinite",
+          }} />
+          <div style={{
+            position: "absolute", top: "50%", left: "50%",
+            transform: "translate(-50%,-50%)",
+            width: "220px", height: "220px",
+            border: "1px solid rgba(220,38,38,0.04)",
+            borderRadius: "50%", animation: "spin 15s linear infinite reverse",
+          }} />
 
-          {/* API Error Message */}
-          <AnimatePresence>
-            {apiError && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium"
-              >
-                {apiError}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div style={{ position: "relative", zIndex: 2, textAlign: "center" }}>
+            <div style={{ marginBottom: "2rem" }}>
+              <svg width="80" height="80" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="sgG" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#FF5555" />
+                    <stop offset="100%" stopColor="#8B0000" />
+                  </linearGradient>
+                </defs>
+                <path d="M 68.2 69.2 A 26 26 0 1 1 68.2 30.8" fill="none" stroke="url(#sgG)" strokeWidth="10" strokeLinecap="round" />
+                <path d="M 61 38 A 16 16 0 1 1 61 62" fill="none" stroke="#CC2222" strokeWidth="3.5" strokeLinecap="round" opacity="0.6" />
+                <circle cx="68.2" cy="69.2" r="5.5" fill="#FF4444" />
+                <circle cx="68.2" cy="69.2" r="2.5" fill="#FFFFFF" />
+              </svg>
+            </div>
+            <h2 style={{ color: "#111827", fontSize: "2rem", fontWeight: "900", letterSpacing: "4px", marginBottom: "0.5rem" }}>LOOPIX</h2>
+            <p style={{ color: "#6b7280", fontSize: "0.85rem", letterSpacing: "2px", marginBottom: "2.5rem" }}>CONNECT · SNAP · SHARE</p>
 
-          {/* Form */}
-          <form onSubmit={onSubmit} noValidate>
-            <div className="flex flex-col gap-5">
-              {fields.map(({ key, label, icon, type, placeholder, toggle, showing }) => (
-                <div key={key}>
-                  <label className="block mb-1.5 text-xs font-bold text-gray-600 tracking-wide">
-                    {label.toUpperCase()}
-                  </label>
-
-                  <div className="relative">
-                    <span className={`absolute left-3.5 top-1/2 -translate-y-1/2 text-sm pointer-events-none ${errors[key] ? 'text-red-500' : 'text-gray-400'}`}>
-                      {icon}
-                    </span>
-
-                    <input
-                      type={type}
-                      value={form[key]}
-                      onChange={onChange(key)}
-                      placeholder={placeholder}
-                      autoComplete={key === "confirm" ? "new-password" : key}
-                      className={`w-full py-2.5 px-10 bg-gray-50 border rounded-xl text-gray-900 text-sm font-medium placeholder:text-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400/50 ${
-                        errors[key] ? 'border-red-500 bg-red-50/30' : 'border-gray-200 focus:border-red-300'
-                      }`}
-                    />
-
-                    {toggle && (
-                      <button
-                        type="button"
-                        onClick={toggle}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        {showing ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
-                      </button>
-                    )}
-                  </div>
-
-                  <AnimatePresence>
-                    {errors[key] && (
-                      <motion.p
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="mt-1 ml-1 text-xs font-semibold text-red-500"
-                      >
-                        ⚠ {errors[key]}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Password strength */}
-                  {key === "password" && form.password.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="mt-2 flex items-center gap-2"
-                    >
-                      <div className="flex-1 flex gap-1">
-                        {[1, 2, 3].map(i => (
-                          <motion.div
-                            key={i}
-                            animate={{ scaleX: strength >= i ? 1 : 0.15, opacity: strength >= i ? 1 : 0.3 }}
-                            className={`h-1 rounded-full origin-left ${strength >= i ? 'bg-green-500' : 'bg-gray-300'}`}
-                            style={{ flex: 1 }}
-                          />
-                        ))}
-                      </div>
-                      <span className={`text-[11px] font-bold min-w-[42px] text-right ${strength > 0 ? `text-${STRENGTH_COLOR[strength] === '#DC2626' ? 'red-500' : STRENGTH_COLOR[strength] === '#F59E0B' ? 'amber-500' : 'green-500'}` : 'text-gray-400'}`}>
-                        {STRENGTH_LABEL[strength]}
-                      </span>
-                    </motion.div>
-                  )}
+            <div style={{ textAlign: "left", display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {[
+                { icon: "👤", text: "Create your unique profile" },
+                { icon: "💬", text: "Chat with friends instantly" },
+                { icon: "📸", text: "Send disappearing snaps" },
+                { icon: "🔒", text: "Private & secure experience" },
+              ].map((item, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <div style={{
+                    width: "36px", height: "36px", background: "rgba(220,38,38,0.05)",
+                    border: "1px solid rgba(220,38,38,0.15)", borderRadius: "10px",
+                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem"
+                  }}>{item.icon}</div>
+                  <span style={{ color: "#4b5563", fontSize: "0.875rem", fontWeight: "500" }}>{item.text}</span>
                 </div>
               ))}
             </div>
-
-            {/* Submit button */}
-            <motion.button
-              type="submit"
-              whileHover={!loading ? { scale: 1.02 } : {}}
-              whileTap={!loading ? { scale: 0.98 } : {}}
-              disabled={loading}
-              className={`w-full mt-8 py-3.5 rounded-xl font-extrabold text-white text-sm tracking-wide flex items-center justify-center gap-2 transition-all duration-200 ${
-                loading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-red-600 to-red-700 hover:shadow-lg hover:shadow-red-200 active:scale-[0.98]'
-              }`}
-            >
-              {loading ? (
-                <>
-                  <motion.span
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 0.75, repeat: Infinity, ease: "linear" }}
-                    className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white"
-                  />
-                  Creating account…
-                </>
-              ) : (
-                <>
-                  Create account
-                  <FaArrowRight className="text-sm" />
-                </>
-              )}
-            </motion.button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300" />
-            <span className="text-xs font-bold text-gray-400 tracking-wider">OR</span>
-            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300" />
           </div>
-
-          {/* Footer */}
-          <p className="text-center text-sm text-gray-500">
-            Already have an account?{" "}
-            <Link to="/login" className="text-red-600 font-bold hover:text-red-700 transition-colors border-b border-red-300 pb-0.5">
-              Log in
-            </Link>
-          </p>
         </div>
 
-        {/* Bottom shimmer line */}
-        <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-      </motion.div>
+        {/* Right Panel - Form */}
+        <div style={{
+          flex: 1,
+          padding: "2.5rem 2rem",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+        }}>
+          {/* Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.75rem" }}>
+            <svg width="36" height="36" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="sgLogo" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#FF5555" />
+                  <stop offset="100%" stopColor="#8B0000" />
+                </linearGradient>
+              </defs>
+              <path d="M 68.2 69.2 A 26 26 0 1 1 68.2 30.8" fill="none" stroke="url(#sgLogo)" strokeWidth="10" strokeLinecap="round" />
+              <path d="M 61 38 A 16 16 0 1 1 61 62" fill="none" stroke="#CC2222" strokeWidth="3.5" strokeLinecap="round" opacity="0.6" />
+              <circle cx="68.2" cy="69.2" r="5.5" fill="#FF4444" />
+              <circle cx="68.2" cy="69.2" r="2.5" fill="#FFFFFF" />
+            </svg>
+            <span style={{
+              fontSize: "1.5rem", fontWeight: "900", letterSpacing: "3px",
+              background: "linear-gradient(90deg, #111827, #dc2626)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
+            }}>LOOPIX</span>
+          </div>
+
+          <h2 style={{ color: "#111827", fontSize: "1.75rem", fontWeight: "800", marginBottom: "0.25rem" }}>Create Account</h2>
+          <p style={{ color: "#6b7280", fontSize: "0.875rem", marginBottom: "1.75rem" }}>Join the community and start creating ✨</p>
+
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+
+            {/* Name */}
+            <div>
+              <label style={{ display: "block", color: "#4b5563", fontSize: "0.7rem", fontWeight: "700", letterSpacing: "1.5px", marginBottom: "0.4rem" }}>USERNAME</label>
+              <div style={{ position: "relative" }}>
+                <User style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", width: "16px", height: "16px" }} />
+                <input
+                  type="text" name="name" value={formData.name} onChange={handleChange}
+                  placeholder="John Doe"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            {/* Email */}
+            <div>
+              <label style={{ display: "block", color: "#4b5563", fontSize: "0.7rem", fontWeight: "700", letterSpacing: "1.5px", marginBottom: "0.4rem" }}>EMAIL</label>
+              <div style={{ position: "relative" }}>
+                <Mail style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", width: "16px", height: "16px" }} />
+                <input
+                  type="email" name="email" value={formData.email} onChange={handleChange}
+                  placeholder="you@example.com"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label style={{ display: "block", color: "#4b5563", fontSize: "0.7rem", fontWeight: "700", letterSpacing: "1.5px", marginBottom: "0.6rem" }}>GENDER</label>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                {["Male", "Female", "Other"].map((g) => (
+                  <label key={g} style={{ flex: 1, cursor: "pointer" }}>
+                    <input type="radio" name="gender" value={g} onChange={handleChange} style={{ display: "none" }} />
+                    <div style={{
+                      padding: "0.6rem",
+                      textAlign: "center",
+                      background: formData.gender === g ? "rgba(220,38,38,0.1)" : "#f9fafb",
+                      border: formData.gender === g ? "1px solid rgba(220,38,38,0.6)" : "1px solid #d1d5db",
+                      borderRadius: "10px",
+                      color: formData.gender === g ? "#dc2626" : "#4b5563",
+                      fontSize: "0.8rem", fontWeight: "600",
+                      transition: "all 0.2s ease",
+                    }}>{g}</div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Passwords */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+              <div>
+                <label style={{ display: "block", color: "#4b5563", fontSize: "0.7rem", fontWeight: "700", letterSpacing: "1.5px", marginBottom: "0.4rem" }}>PASSWORD</label>
+                <div style={{ position: "relative" }}>
+                  <Lock style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", width: "16px", height: "16px" }} />
+                  <input
+                    type={showPass ? "text" : "password"} name="password"
+                    value={formData.password} onChange={handleChange}
+                    placeholder="••••••••"
+                    style={inputStyle}
+                  />
+                  <div onClick={() => setShowPass(!showPass)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#9ca3af" }}>
+                    {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label style={{ display: "block", color: "#4b5563", fontSize: "0.7rem", fontWeight: "700", letterSpacing: "1.5px", marginBottom: "0.4rem" }}>CONFIRM</label>
+                <div style={{ position: "relative" }}>
+                  <Lock style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", width: "16px", height: "16px" }} />
+                  <input
+                    type={showConfirmPass ? "text" : "password"} name="confirmPassword"
+                    value={formData.confirmPassword} onChange={handleChange}
+                    placeholder="••••••••"
+                    style={inputStyle}
+                  />
+                  <div onClick={() => setShowConfirmPass(!showConfirmPass)} style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", cursor: "pointer", color: "#9ca3af" }}>
+                    {showConfirmPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit" disabled={loading}
+              style={{
+                width: "100%", padding: "0.875rem",
+                background: loading ? "#cbd5e1" : "linear-gradient(135deg, #dc2626, #b91c1c)",
+                border: "none", borderRadius: "12px",
+                color: "#fff", fontWeight: "800", fontSize: "0.9rem", letterSpacing: "1px",
+                cursor: loading ? "not-allowed" : "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+                transition: "all 0.2s ease",
+                boxShadow: loading ? "none" : "0 8px 24px rgba(220,38,38,0.2)",
+                marginTop: "0.25rem",
+              }}
+            >
+              {loading ? (
+                <><div style={{ width: "16px", height: "16px", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", animation: "spin 0.75s linear infinite" }} /> Creating account...</>
+              ) : (
+                <>Sign Up <ArrowRight size={16} /></>
+              )}
+            </button>
+
+            {/* Divider */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+              <span style={{ color: "#9ca3af", fontSize: "0.7rem", fontWeight: "700", letterSpacing: "2px" }}>OR</span>
+              <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+            </div>
+
+            {/* Social */}
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button type="button" onClick={googleLoginApi} style={socialBtnStyle}>
+                <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#EA4335" d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.27 0 3.198 2.698 1.24 6.65l4.026 3.115Z"/><path fill="#34A853" d="M16.04 18.013c-1.09.703-2.474 1.078-4.04 1.078a7.077 7.077 0 0 1-6.723-4.777l-4.028 3.116C3.196 21.296 7.265 24 12 24c2.933 0 5.735-1.043 7.834-3L16.04 18.013Z"/><path fill="#4A90E2" d="M19.834 21c2.195-2.048 3.62-5.096 3.62-9 0-.71-.109-1.473-.272-2.182H12v4.637h6.436c-.317 1.559-1.17 2.766-2.395 3.558L19.834 21Z"/><path fill="#FBBC05" d="M5.277 14.314A7.117 7.117 0 0 1 4.909 12c0-.809.138-1.582.357-2.314L1.24 6.571A11.932 11.932 0 0 0 0 12c0 1.92.445 3.73 1.237 5.335l4.04-3.021Z"/></svg>
+                Google
+              </button>
+              <button type="button" style={socialBtnStyle}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#181717"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>
+                GitHub
+              </button>
+            </div>
+
+            <p style={{ textAlign: "center", color: "#4b5563", fontSize: "0.85rem", marginTop: "0.25rem" }}>
+              Already have an account?{" "}
+              <Link to="/login" style={{ color: "#dc2626", fontWeight: "700", textDecoration: "none" }}>Log in</Link>
+            </p>
+          </form>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        input::placeholder { color: #9ca3af; }
+        input:focus { outline: none; border-color: rgba(220,38,38,0.5) !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.15); }
+        @media(min-width: 768px) { .signup-left-panel { display: flex !important; } }
+      `}</style>
     </div>
   );
 }
+
+const inputStyle = {
+  width: "100%",
+  paddingLeft: "2.5rem",
+  paddingRight: "2.5rem",
+  paddingTop: "0.7rem",
+  paddingBottom: "0.7rem",
+  background: "#f9fafb",
+  border: "1px solid #d1d5db",
+  borderRadius: "12px",
+  color: "#111827",
+  fontSize: "0.875rem",
+  transition: "all 0.2s ease",
+  boxSizing: "border-box",
+};
+
+const socialBtnStyle = {
+  flex: 1,
+  display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+  padding: "0.65rem",
+  background: "#ffffff",
+  border: "1px solid #d1d5db",
+  borderRadius: "12px",
+  color: "#374151",
+  fontSize: "0.8rem", fontWeight: "600",
+  cursor: "pointer",
+  transition: "all 0.2s ease",
+};

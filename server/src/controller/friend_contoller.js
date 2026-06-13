@@ -1,211 +1,192 @@
-import {} from '../models/user_models.js'
-
-
+import user_models from '../models/user_models.js'
+import { error } from '../errorhandling/error.js'
 
 export const friends = async (req, res) => {
-try {
-const { requestId, action } = req.body;
+  try {
+    const { requestId, action } = req.body;
+    const currentUserId = req.user.id;
 
+    const currentUser = await user_models.findById(currentUserId);
+    const senderUser = await user_models.findById(requestId);
 
-const currentUserId = req.user.id;
+    if (!currentUser || !senderUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
 
-const currentUser = await User.findById(currentUserId);
-const senderUser = await User.findById(requestId);
+    const requestExists = currentUser.friendRequests.some(id => id.toString() === requestId);
 
-if (!currentUser || !senderUser) {
-  return res.status(404).json({
-    success: false,
-    message: "User not found",
-  });
-}
+    if (!requestExists) {
+      return res.status(400).json({ success: false, message: "Friend request not found" });
+    }
 
-const requestExists = currentUser.friendRequests.includes(requestId);
+    if (action === "accept") {
+      // Remove from receiver's friendRequests
+      currentUser.friendRequests = currentUser.friendRequests.filter(
+        (id) => id.toString() !== requestId
+      );
+      // Remove from sender's sentRequests
+      senderUser.sentRequests = (senderUser.sentRequests || []).filter(
+        (id) => id.toString() !== currentUserId
+      );
+      // Add to friends (prevent duplicates)
+      if (!currentUser.friends.some(id => id.toString() === requestId)) {
+        currentUser.friends.push(requestId);
+      }
+      if (!senderUser.friends.some(id => id.toString() === currentUserId)) {
+        senderUser.friends.push(currentUserId);
+      }
+      // Update friend counts
+      currentUser.friendsCount = currentUser.friends.length;
+      senderUser.friendsCount = senderUser.friends.length;
 
-if (!requestExists) {
-  return res.status(400).json({
-    success: false,
-    message: "Friend request not found",
-  });
-}
+      await currentUser.save();
+      await senderUser.save();
+      return res.status(200).json({ success: true, message: "Friend request accepted" });
+    }
 
-// ACCEPT REQUEST
-if (action === "accept") {
+    if (action === "reject") {
+      // Remove from receiver's friendRequests
+      currentUser.friendRequests = currentUser.friendRequests.filter(
+        (id) => id.toString() !== requestId
+      );
+      // Remove from sender's sentRequests
+      senderUser.sentRequests = (senderUser.sentRequests || []).filter(
+        (id) => id.toString() !== currentUserId
+      );
+      await currentUser.save();
+      await senderUser.save();
+      return res.status(200).json({ success: true, message: "Friend request rejected" });
+    }
 
-  currentUser.friendRequests =
-    currentUser.friendRequests.filter(
-      (id) => id.toString() !== requestId
-    );
+    return res.status(400).json({ success: false, message: "Invalid action. Use 'accept' or 'reject'" });
 
-  currentUser.friends.push(requestId);
-
-  senderUser.friends.push(currentUserId);
-
-  await currentUser.save();
-  await senderUser.save();
-
-  return res.status(200).json({
-    success: true,
-    message: "Friend request accepted",
-  });
-}
-
-// REJECT REQUEST
-if (action === "reject") {
-
-  currentUser.friendRequests =
-    currentUser.friendRequests.filter(
-      (id) => id.toString() !== requestId
-    );
-
-  await currentUser.save();
-
-  return res.status(200).json({
-    success: true,
-    message: "Friend request rejected",
-  });
-}
-
-return res.status(400).json({
-  success: false,
-  message: "Invalid action",
-});
-
-
-} catch (err) {
-console.log(err.message);
-
-
-return res.status(500).json({
-  success: false,
-  message: "Server Error",
-});
-
-
-}
+  } catch (err) {
+    error(err, res);
+  }
 };
 
 export const sendFriendRequest = async (req, res) => {
-try {
-const senderId = req.user.id;
-const receiverId = req.params.id;
+  try {
+    const senderId = req.user.id;
+    const receiverId = req.params.id;
 
+    if (senderId === receiverId) {
+      return res.status(400).json({ status: false, msg: "You cannot send a request to yourself" });
+    }
 
-if (senderId === receiverId) {
-  return res.status(400).json({
-    status: false,
-    msg: "You cannot send request to yourself"
-  });
-}
+    const sender = await user_models.findById(senderId);
+    const receiver = await user_models.findById(receiverId);
 
-const sender = await user_models.findById(senderId);
-const receiver = await user_models.findById(receiverId);
+    if (!sender) {
+      return res.status(404).json({ status: false, msg: "Sender not found" });
+    }
+    if (!receiver) {
+      return res.status(404).json({ status: false, msg: "User not found" });
+    }
 
-if (!receiver) {
-  return res.status(404).json({
-    status: false,
-    msg: "User not found"
-  });
-}
+    // Check if already friends (check both sides)
+    const alreadyFriend = sender.friends?.some(id => id.toString() === receiverId) ||
+                          receiver.friends?.some(id => id.toString() === senderId);
+    if (alreadyFriend) {
+      return res.status(400).json({ status: false, msg: "Already friends" });
+    }
 
-const alreadyFriend =
-  receiver.friends?.includes(senderId);
+    // Check if request already sent
+    const alreadyRequested = receiver.friendRequests?.some(id => id.toString() === senderId);
+    if (alreadyRequested) {
+      return res.status(400).json({ status: false, msg: "Friend request already sent" });
+    }
 
-if (alreadyFriend) {
-  return res.status(400).json({
-    status: false,
-    msg: "Already friends"
-  });
-}
+    // Check if receiver already sent a request to sender (auto-accept)
+    const reverseRequest = sender.friendRequests?.some(id => id.toString() === receiverId);
+    if (reverseRequest) {
+      // Auto-accept: both users want to be friends
+      sender.friendRequests = sender.friendRequests.filter(id => id.toString() !== receiverId);
+      receiver.sentRequests = (receiver.sentRequests || []).filter(id => id.toString() !== senderId);
+      if (!sender.friends.some(id => id.toString() === receiverId)) {
+        sender.friends.push(receiverId);
+      }
+      if (!receiver.friends.some(id => id.toString() === senderId)) {
+        receiver.friends.push(senderId);
+      }
+      sender.friendsCount = sender.friends.length;
+      receiver.friendsCount = receiver.friends.length;
+      await sender.save();
+      await receiver.save();
+      return res.status(200).json({ status: true, msg: "You are now friends! (auto-accepted)" });
+    }
 
-const alreadyRequested =
-  receiver.friendRequests?.includes(senderId);
+    // Add to receiver's friendRequests and sender's sentRequests
+    receiver.friendRequests.push(senderId);
+    if (!sender.sentRequests) sender.sentRequests = [];
+    sender.sentRequests.push(receiverId);
+    await receiver.save();
+    await sender.save();
 
-if (alreadyRequested) {
-  return res.status(400).json({
-    status: false,
-    msg: "Friend request already sent"
-  });
-}
+    return res.status(200).json({ status: true, msg: "Friend request sent" });
 
-receiver.friendRequests.push(senderId);
-
-await receiver.save();
-
-return res.status(200).json({
-  status: true,
-  msg: "Friend request sent"
-});
-
-
-} catch (err) {
-console.log(err.message);
-
-
-return res.status(500).json({
-  status: false,
-  msg: "Server Error"
-});
-
-
-}
+  } catch (err) {
+    error(err, res);
+  }
 };
 
 export const getFriendRequests = async (req, res) => {
-try {
+  try {
+    const user = await user_models
+      .findById(req.user.id)
+      .populate("friendRequests", "name email profileImg");
 
+    if (!user) return res.status(404).json({ status: false, msg: "User not found" });
 
-const user = await user_models
-  .findById(req.user.id)
-  .populate(
-    "friendRequests",
-    "name email profilePic"
-  );
+    return res.status(200).json({ status: true, requests: user.friendRequests });
 
-return res.status(200).json({
-  status: true,
-  requests: user.friendRequests
-});
-
-
-} catch (err) {
-console.log(err.message);
-}
+  } catch (err) {
+    error(err, res);
+  }
 };
 
 export const removeFriend = async (req, res) => {
-try {
+  try {
+    const currentUserId = req.user.id;
+    const friendId = req.params.id;
 
+    await user_models.findByIdAndUpdate(currentUserId, { $pull: { friends: friendId }, $inc: { friendsCount: -1 } });
+    await user_models.findByIdAndUpdate(friendId, { $pull: { friends: currentUserId }, $inc: { friendsCount: -1 } });
 
-const currentUserId = req.user.id;
-const friendId = req.params.id;
+    return res.status(200).json({ status: true, msg: "Friend removed successfully" });
 
-await user_models.findByIdAndUpdate(
-  currentUserId,
-  {
-    $pull: {
-      friends: friendId
-    }
+  } catch (err) {
+    error(err, res);
   }
-);
-
-await user_models.findByIdAndUpdate(
-  friendId,
-  {
-    $pull: {
-      friends: currentUserId
-    }
-  }
-);
-
-return res.status(200).json({
-  status: true,
-  msg: "Friend removed successfully"
-});
-
-
-} catch (err) {
-console.log(err.message);
-}
 };
 
+export const cancelFriendRequest = async (req, res) => {
+  try {
+    const senderId = req.user.id;
+    const receiverId = req.params.id;
 
+    // Remove from sender's sentRequests
+    await user_models.findByIdAndUpdate(senderId, { $pull: { sentRequests: receiverId } });
+    // Remove from receiver's friendRequests
+    await user_models.findByIdAndUpdate(receiverId, { $pull: { friendRequests: senderId } });
+
+    return res.status(200).json({ status: true, msg: "Friend request cancelled" });
+  } catch (err) {
+    error(err, res);
+  }
+};
+
+export const getFriends = async (req, res) => {
+  try {
+    const user = await user_models
+      .findById(req.user.id)
+      .populate("friends", "name email profileImg user");
+
+    if (!user) return res.status(404).json({ status: false, msg: "User not found" });
+
+    return res.status(200).json({ status: true, friends: user.friends });
+
+  } catch (err) {
+    error(err, res);
+  }
+};

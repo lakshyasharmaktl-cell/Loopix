@@ -2,21 +2,23 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowRight, FaGoogle, FaGithub } from 'react-icons/fa';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import BASE_URL from '../../global_url.js';
 
-// Loopix mark component
 function LoopixMark({ size = 44 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="lmG" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="lmGLogin" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#FF5555" />
           <stop offset="100%" stopColor="#AA0000" />
         </linearGradient>
       </defs>
-      <path d="M 68.2 69.2 A 26 26 0 1 1 68.2 30.8" fill="none" stroke="url(#lmG)" strokeWidth="10" strokeLinecap="round" />
+      <path d="M 68.2 69.2 A 26 26 0 1 1 68.2 30.8" fill="none" stroke="url(#lmGLogin)" strokeWidth="10" strokeLinecap="round" />
       <path d="M 61 38 A 16 16 0 1 1 61 62" fill="none" stroke="#CC2222" strokeWidth="3.5" strokeLinecap="round" opacity="0.6" />
       <circle cx="68.2" cy="69.2" r="5.5" fill="#FF4444" />
-      <circle cx="68.2" cy="69.2" r="2.5" fill="#100000" />
+      <circle cx="68.2" cy="69.2" r="2.5" fill="#FFFFFF" />
     </svg>
   );
 }
@@ -32,13 +34,12 @@ export default function Login() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm(prev => ({ ...prev, [name]: value }));
-    setError(''); // Clear error on input change
+    setError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Basic validation
+
     if (!form.email.trim() || !form.password.trim()) {
       setError('Please fill in all fields');
       return;
@@ -49,262 +50,262 @@ export default function Login() {
     setSuccess('');
 
     try {
-      // Replace with your actual API endpoint
-      const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-        }),
+      const response = await axios.post(`${BASE_URL}/login`, {
+        email: form.email,
+        password: form.password,
       });
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed. Please check your credentials.');
+      if (!data.status) {
+        throw new Error(data.msg || 'Login failed. Please check your credentials.');
       }
 
-      // Store user data and token
       if (data.token) {
         localStorage.setItem('auth_token', data.token);
       }
-      localStorage.setItem('loopix_user', JSON.stringify(data.user || { email: form.email, username: data.user?.username || 'User' }));
+      localStorage.setItem('loopix_user', JSON.stringify(data.user));
 
       setSuccess('Login successful! Redirecting...');
-      
-      // Redirect after short delay
+      toast.success('Welcome back to Loopix! 👻');
+
       setTimeout(() => {
         navigate('/chats');
-      }, 1500);
+      }, 1200);
 
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err.message || 'Something went wrong. Please try again.');
+      const msg = err.response?.data?.msg || err.message || 'Something went wrong. Please try again.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  // Demo login for testing (remove in production)
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    setError('');
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Demo credentials check
-      if (form.email && form.password) {
-        localStorage.setItem('loopix_user', JSON.stringify({ 
-          email: form.email, 
-          username: form.email.split('@')[0] 
-        }));
-        setSuccess('Demo login successful!');
-        setTimeout(() => navigate('/chats'), 1000);
-      } else {
-        setError('Please enter email and password for demo');
-      }
-    } catch (err) {
-      setError('Demo login failed');
-    } finally {
-      setLoading(false);
-    }
+  const googleLogin = () => {
+    window.location.href = `${BASE_URL}/auth/google`;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 flex items-center justify-center font-sans relative overflow-hidden p-8">
-      {/* Decorative background elements */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-red-100 rounded-full blur-3xl opacity-40 -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-rose-100 rounded-full blur-3xl opacity-40 translate-y-1/2 -translate-x-1/2 pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-red-50 rounded-full blur-3xl opacity-20 pointer-events-none" />
+    <div style={{
+      minHeight: "100vh",
+      background: "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
+      position: "relative",
+      overflow: "hidden",
+      padding: "2rem 1rem",
+    }}>
+      {/* Background blobs */}
+      <div style={{
+        position: "fixed", top: 0, right: 0,
+        width: "500px", height: "500px",
+        background: "radial-gradient(circle, rgba(220,38,38,0.06) 0%, transparent 70%)",
+        transform: "translate(30%, -30%)", pointerEvents: "none"
+      }} />
+      <div style={{
+        position: "fixed", bottom: 0, left: 0,
+        width: "400px", height: "400px",
+        background: "radial-gradient(circle, rgba(220,38,38,0.04) 0%, transparent 70%)",
+        transform: "translate(-30%, 30%)", pointerEvents: "none"
+      }} />
 
-      {/* Card */}
       <motion.div
         initial={{ opacity: 0, y: 28, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-md bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl shadow-xl overflow-hidden"
+        style={{
+          position: "relative",
+          zIndex: 10,
+          width: "100%",
+          maxWidth: "420px",
+          background: "rgba(255, 255, 255, 0.8)",
+          backdropFilter: "blur(24px)",
+          border: "1px solid rgba(0, 0, 0, 0.06)",
+          borderRadius: "24px",
+          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)",
+          overflow: "hidden",
+        }}
       >
-        {/* Top shimmer line */}
-        <div className="h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent opacity-70" />
+        {/* Top brand line */}
+        <div style={{ height: "3px", background: "linear-gradient(90deg, #ff8a8a, #dc2626, #ff8a8a)" }} />
 
-        <div className="p-8 sm:p-10">
+        <div style={{ padding: "2.5rem 2rem" }}>
           {/* Logo */}
-          <div className="flex flex-col items-center mb-8">
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginBottom: "2rem" }}>
             <motion.div
               animate={{ rotate: [0, 7, -7, 0] }}
               transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-              className="mb-3"
+              style={{ marginBottom: "0.75rem" }}
             >
               <LoopixMark size={52} />
             </motion.div>
-            <span className="text-3xl font-black tracking-tight bg-gradient-to-r from-gray-900 via-red-700 to-red-600 bg-clip-text text-transparent">
-              LOOPIX
-            </span>
-            <span className="mt-1.5 text-xs font-semibold text-gray-500 tracking-[3px]">
+            <span style={{
+              fontSize: "1.875rem", fontWeight: "900", letterSpacing: "4px",
+              background: "linear-gradient(90deg, #111827 0%, #dc2626 60%, #991b1b 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
+            }}>LOOPIX</span>
+            <span style={{ marginTop: "0.375rem", fontSize: "0.65rem", fontWeight: "700", color: "#6b7280", letterSpacing: "4px" }}>
               WELCOME BACK
             </span>
           </div>
 
-          {/* Error/Success Messages */}
+          {/* Error / Success Messages */}
           <AnimatePresence>
             {error && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm font-medium"
+                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                style={{ marginBottom: "1rem", padding: "0.75rem 1rem", background: "#fef2f2", border: "1px solid #fee2e2", borderRadius: "12px", color: "#b91c1c", fontSize: "0.825rem", fontWeight: "500" }}
               >
-                {error}
+                ⚠️ {error}
               </motion.div>
             )}
             {success && (
               <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-600 text-sm font-medium"
+                initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                style={{ marginBottom: "1rem", padding: "0.75rem 1rem", background: "#f0fdf4", border: "1px solid #dcfce7", borderRadius: "12px", color: "#15803d", fontSize: "0.825rem", fontWeight: "500" }}
               >
-                {success}
+                ✅ {success}
               </motion.div>
             )}
           </AnimatePresence>
 
           {/* Form */}
           <form onSubmit={handleSubmit} noValidate>
-            <div className="flex flex-col gap-5">
-              {/* Email field */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+
+              {/* Email */}
               <div>
-                <label className="block mb-1.5 text-xs font-bold text-gray-600 tracking-wide">
-                  EMAIL ADDRESS
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                <label style={labelStyle}>EMAIL ADDRESS</label>
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: "0.8rem" }}>
                     <FaEnvelope />
                   </span>
                   <input
-                    type="email"
-                    name="email"
-                    value={form.email}
-                    onChange={handleChange}
+                    type="email" name="email" value={form.email} onChange={handleChange}
                     placeholder="you@example.com"
-                    className="w-full py-2.5 px-10 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm font-medium placeholder:text-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400/50 focus:border-red-300"
                     disabled={loading}
+                    style={inputStyle}
                   />
                 </div>
               </div>
 
-              {/* Password field */}
+              {/* Password */}
               <div>
-                <label className="block mb-1.5 text-xs font-bold text-gray-600 tracking-wide">
-                  PASSWORD
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                <label style={labelStyle}>PASSWORD</label>
+                <div style={{ position: "relative" }}>
+                  <span style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: "0.8rem" }}>
                     <FaLock />
                   </span>
                   <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    value={form.password}
-                    onChange={handleChange}
+                    type={showPassword ? "text" : "password"} name="password"
+                    value={form.password} onChange={handleChange}
                     placeholder="Enter your password"
-                    className="w-full py-2.5 px-10 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm font-medium placeholder:text-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400/50 focus:border-red-300"
                     disabled={loading}
+                    style={inputStyle}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    {showPassword ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
+                  <button type="button" onClick={() => setShowPassword(!showPassword)}
+                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "0.8rem" }}>
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Forgot password link */}
-            <div className="text-right mt-2">
-              <Link to="/forgot-password" className="text-xs text-gray-500 hover:text-red-600 transition-colors">
+            {/* Forgot */}
+            <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
+              <Link to="/forgot-password" style={{ fontSize: "0.75rem", color: "#6b7280", textDecoration: "none", fontWeight: "500" }}>
                 Forgot password?
               </Link>
             </div>
 
-            {/* Submit button */}
+            {/* Submit */}
             <motion.button
               type="submit"
               whileHover={!loading ? { scale: 1.02 } : {}}
               whileTap={!loading ? { scale: 0.98 } : {}}
               disabled={loading}
-              className={`w-full mt-6 py-3.5 rounded-xl font-extrabold text-white text-sm tracking-wide flex items-center justify-center gap-2 transition-all duration-200 ${
-                loading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-red-600 to-red-700 hover:shadow-lg hover:shadow-red-200 active:scale-[0.98]'
-              }`}
+              style={{
+                width: "100%", marginTop: "1.5rem", padding: "0.875rem",
+                borderRadius: "12px", fontWeight: "800", color: "#fff",
+                fontSize: "0.875rem", letterSpacing: "1px",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+                transition: "all 0.2s ease", border: "none", cursor: loading ? "not-allowed" : "pointer",
+                background: loading ? "#cbd5e1" : "linear-gradient(135deg, #dc2626, #b91c1c)",
+                boxShadow: loading ? "none" : "0 8px 24px rgba(220, 38, 38, 0.2)",
+              }}
             >
               {loading ? (
                 <>
                   <motion.span
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 0.75, repeat: Infinity, ease: "linear" }}
-                    className="inline-block w-4 h-4 rounded-full border-2 border-white/30 border-t-white"
+                    animate={{ rotate: 360 }} transition={{ duration: 0.75, repeat: Infinity, ease: "linear" }}
+                    style={{ display: "inline-block", width: "16px", height: "16px", borderRadius: "50%", border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff" }}
                   />
                   Logging in...
                 </>
               ) : (
-                <>
-                  Log in
-                  <FaArrowRight className="text-sm" />
-                </>
+                <>Log in <FaArrowRight style={{ fontSize: "0.8rem" }} /></>
               )}
             </motion.button>
           </form>
 
-          {/* Demo login button (optional) */}
-          <button
-            onClick={handleDemoLogin}
-            disabled={loading}
-            className="w-full mt-3 py-2.5 rounded-xl font-semibold text-gray-600 text-sm border border-gray-200 bg-white/50 hover:bg-gray-50 transition-all duration-200"
-          >
-            Demo Login
-          </button>
-
           {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-gray-300" />
-            <span className="text-xs font-bold text-gray-400 tracking-wider">OR</span>
-            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-gray-300" />
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "1.5rem 0" }}>
+            <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+            <span style={{ fontSize: "0.65rem", fontWeight: "700", color: "#9ca3af", letterSpacing: "3px" }}>OR</span>
+            <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
           </div>
 
-          {/* Social login buttons */}
-          <div className="flex gap-3">
-            <button className="flex-1 py-2.5 rounded-xl border border-gray-200 bg-white/50 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2 text-gray-700 text-sm font-medium">
-              <FaGoogle className="text-red-500" />
-              Google
+          {/* Social */}
+          <div style={{ display: "flex", gap: "0.75rem" }}>
+            <button onClick={googleLogin} style={socialBtnStyle}>
+              <FaGoogle style={{ color: "#EA4335" }} /> Google
             </button>
-            <button className="flex-1 py-2.5 rounded-xl border border-gray-200 bg-white/50 hover:bg-gray-50 transition-all duration-200 flex items-center justify-center gap-2 text-gray-700 text-sm font-medium">
-              <FaGithub className="text-gray-800" />
-              GitHub
+            <button style={socialBtnStyle}>
+              <FaGithub style={{ color: "#181717" }} /> GitHub
             </button>
           </div>
 
           {/* Footer */}
-          <p className="text-center text-sm text-gray-500 mt-6">
+          <p style={{ textAlign: "center", fontSize: "0.85rem", color: "#4b5563", marginTop: "1.5rem" }}>
             Don't have an account?{" "}
-            <Link to="/signup" className="text-red-600 font-bold hover:text-red-700 transition-colors border-b border-red-300 pb-0.5">
+            <Link to="/signup" style={{ color: "#dc2626", fontWeight: "700", textDecoration: "none" }}>
               Sign up
             </Link>
           </p>
         </div>
-
-        {/* Bottom shimmer line */}
-        <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
       </motion.div>
+
+      <style>{`
+        input::placeholder { color: #9ca3af !important; }
+        input:focus { outline: none !important; border-color: rgba(220,38,38,0.5) !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.15) !important; }
+      `}</style>
     </div>
   );
 }
+
+const labelStyle = {
+  display: "block", marginBottom: "0.375rem",
+  fontSize: "0.65rem", fontWeight: "700",
+  color: "#4b5563", letterSpacing: "2px",
+};
+
+const inputStyle = {
+  width: "100%", paddingTop: "0.7rem", paddingBottom: "0.7rem",
+  paddingLeft: "2.5rem", paddingRight: "2.5rem",
+  background: "#f9fafb",
+  border: "1px solid #d1d5db",
+  borderRadius: "12px", color: "#111827",
+  fontSize: "0.875rem", transition: "all 0.2s ease", boxSizing: "border-box",
+};
+
+const socialBtnStyle = {
+  flex: 1, padding: "0.65rem",
+  borderRadius: "12px", border: "1px solid #d1d5db",
+  background: "#ffffff",
+  color: "#374151", fontSize: "0.8rem", fontWeight: "600",
+  display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+  cursor: "pointer", transition: "all 0.2s ease",
+};

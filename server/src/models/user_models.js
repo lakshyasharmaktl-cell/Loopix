@@ -50,7 +50,7 @@ user: {
 friends: [
     {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'usedsrs'
+        ref: 'users'
     }
 ],
 
@@ -58,7 +58,7 @@ friends: [
 friendRequests: [
     {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'usedsrs'
+        ref: 'users'
     }
 ],
 
@@ -66,7 +66,7 @@ friendRequests: [
 sentRequests: [
     {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'usedsrs'
+        ref: 'users'
     }
 ],
 
@@ -74,7 +74,7 @@ sentRequests: [
 blockedUsers: [
     {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'usedsrs'
+        ref: 'users'
     }
 ],
 
@@ -106,13 +106,14 @@ try {
     next()
 
 } catch (err) {
-    next(err)
+    console.log(err.message)
 }
 
 
 })
 
 export default mongoose.model(
-'usedsrs',
+'users',
 userSchema
 )
+

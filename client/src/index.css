@@ -1,1 +1,36 @@
 @import "tailwindcss";
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background: #f8f7f5;
+  color: #1a1a1a;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: rgba(220,38,38,0.35); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(220,38,38,0.55); }
+
+/* Toast notifications */
+.Toastify__toast {
+  background: #fff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #1a1a1a !important;
+  font-family: 'Inter', sans-serif !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08) !important;
+}
+.Toastify__toast--success { border-color: rgba(34,197,94,0.4) !important; }
+.Toastify__toast--error   { border-color: rgba(220,38,38,0.4) !important; }
+.Toastify__progress-bar--success { background: #22c55e !important; }
+.Toastify__progress-bar--error   { background: #dc2626 !important; }
