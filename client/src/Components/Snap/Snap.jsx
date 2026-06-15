@@ -437,7 +437,7 @@ export default function Snap() {
         />
       )}
 
-      {/* ── top gradient overlay ── */}
+      {/* top gradient overlay */}
       <div
         style={{
           position: "absolute",
@@ -451,6 +451,30 @@ export default function Snap() {
           zIndex: 5,
         }}
       />
+      {/* Back button */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => navigate(-1)}
+        style={{
+          position: "absolute",
+          top: "20px",
+          left: "20px",
+          background: "rgba(0,0,0,0.4)",
+          border: "none",
+          borderRadius: "50%",
+          width: "36px",
+          height: "36px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#fff",
+          cursor: "pointer",
+          zIndex: 10,
+        }}
+      >
+        <FaTimes style={{ fontSize: "1rem" }} />
+      </motion.button>
 
       {/* ── header text ── */}
       <motion.div

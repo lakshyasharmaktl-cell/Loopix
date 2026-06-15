@@ -46,7 +46,7 @@ export default function Navbar() {
     { name: "Chats",   path: "/chats",   icon: <IoChatbubblesSharp /> },
     { name: "Friends", path: "/friends", icon: <IoPeopleSharp /> },
     { name: "Snap",    path: "/camera",  icon: <FaCamera /> },
-    { name: "Search",  path: "/search",  icon: <FiSearch /> },
+    // { name: "Search",  path: "/search",  icon: <FiSearch /> },
     { name: "Profile", path: "/profile", icon: <FaUserCircle /> },
   ];
 
@@ -127,7 +127,7 @@ export default function Navbar() {
               {user ? (
                 <>
                   {/* Bell */}
-                  <motion.button
+                  {/* <motion.button
                     whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     style={{
                       position: "relative", padding: "0.5rem",
@@ -144,7 +144,7 @@ export default function Navbar() {
                       fontWeight: "800", display: "flex", alignItems: "center", justifyContent: "center",
                       animation: "pulse 1.5s infinite",
                     }}>3</span>
-                  </motion.button>
+                  </motion.button> */}
 
                   {/* Avatar dropdown */}
                   <div style={{ position: "relative" }}>

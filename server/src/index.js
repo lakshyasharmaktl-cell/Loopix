@@ -21,10 +21,8 @@ mongoose.connect(process.env.MongoDBUrl)
     .then(() => console.log('MongoDB connected ...'))
     .catch((err) => console.log('MongoDB error =>', err.message));
 
-// Create HTTP server
 const server = http.createServer(app);
 
-// Initialize Socket.io
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -32,7 +30,6 @@ const io = new Server(server, {
   }
 });
 
-// Store socket id to user mapping for cleaner online/offline tracking
 const userSockets = new Map();
 
 io.on('connection', (socket) => {
@@ -44,7 +41,6 @@ io.on('connection', (socket) => {
     userSockets.set(socket.id, userId);
     console.log(`User ${userId} joined room. Socket: ${socket.id}`);
 
-    // Update status to online
     try {
       await user_models.findByIdAndUpdate(userId, { $set: { 'user.isOnline': true } });
       io.emit('user_status', { userId, online: true });
