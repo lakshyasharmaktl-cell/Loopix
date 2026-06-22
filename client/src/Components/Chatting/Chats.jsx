@@ -135,13 +135,12 @@ export default function Chats() {
     }}>
       {/* Sidebar */}
       <div style={{
-        width: selected ? "0px" : "100%",
+        width: "360px",
         maxWidth: "360px",
         borderRight: "1px solid #e5e7eb",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        transition: "width 0.3s ease",
         flexShrink: 0,
       }} className="chats-sidebar">
         {/* Header */}
