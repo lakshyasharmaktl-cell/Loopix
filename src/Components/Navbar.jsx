@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -32,6 +32,23 @@ export default function Navbar() {
   const [user, setUser] = useState(
     () => JSON.parse(localStorage.getItem("loopix_user")) || null
   );
+
+  // ── Fix: re-sync user state whenever localStorage changes after login ──
+  useEffect(() => {
+    const syncUser = () => {
+      const stored = localStorage.getItem("loopix_user");
+      setUser(stored ? JSON.parse(stored) : null);
+    };
+    // Fires when another tab changes localStorage
+    window.addEventListener("storage", syncUser);
+    // Fires when Login/Signup on the SAME tab sets the user
+    window.addEventListener("loopix-auth-change", syncUser);
+    return () => {
+      window.removeEventListener("storage", syncUser);
+      window.removeEventListener("loopix-auth-change", syncUser);
+    };
+  }, []);
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleLogout = () => {

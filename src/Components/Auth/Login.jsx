@@ -65,6 +65,8 @@ export default function Login() {
         localStorage.setItem('auth_token', data.token);
       }
       localStorage.setItem('loopix_user', JSON.stringify(data.user));
+      // Notify Navbar on the same tab to re-read auth state (no refresh needed)
+      window.dispatchEvent(new Event('loopix-auth-change'));
 
       setSuccess('Login successful! Redirecting...');
       toast.success('Welcome back to Loopix! 👻');
