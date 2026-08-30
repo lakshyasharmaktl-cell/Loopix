@@ -1,5 +1,35 @@
 @import "tailwindcss";
 
+:root {
+  --bg-main: #f8f7f5;
+  --bg-card: #ffffff;
+  --bg-subtle: #f3f4f6;
+  --bg-hover: rgba(0, 0, 0, 0.04);
+  --text-main: #1a1a1a;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --input-bg: #ffffff;
+  --input-border: #d1d5db;
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --dropdown-bg: #ffffff;
+  --shadow-color: rgba(0, 0, 0, 0.06);
+}
+
+.dark {
+  --bg-main: #0f172a;
+  --bg-card: #1e293b;
+  --bg-subtle: #334155;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --input-bg: #1e293b;
+  --input-border: #475569;
+  --glass-bg: rgba(15, 23, 42, 0.88);
+  --dropdown-bg: #1e293b;
+  --shadow-color: rgba(0, 0, 0, 0.4);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -9,28 +39,34 @@
 html, body, #root {
   height: 100%;
   font-family: 'Inter', 'Segoe UI', sans-serif;
-  background: #f8f7f5;
-  color: #1a1a1a;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  transition: background-color 0.25s ease, color 0.25s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom scrollbar */
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: #f1f1f1; }
-::-webkit-scrollbar-thumb { background: rgba(220,38,38,0.35); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(220,38,38,0.55); }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-main); }
+::-webkit-scrollbar-thumb { background: rgba(220, 38, 38, 0.35); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(220, 38, 38, 0.65); }
 
-/* Toast notifications */
+/* Toast notifications adaptation */
 .Toastify__toast {
-  background: #fff !important;
-  border: 1px solid #e5e7eb !important;
-  color: #1a1a1a !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-main) !important;
   font-family: 'Inter', sans-serif !important;
   border-radius: 14px !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.08) !important;
+  box-shadow: 0 8px 32px var(--shadow-color) !important;
 }
-.Toastify__toast--success { border-color: rgba(34,197,94,0.4) !important; }
-.Toastify__toast--error   { border-color: rgba(220,38,38,0.4) !important; }
+.Toastify__toast--success { border-color: rgba(34, 197, 94, 0.4) !important; }
+.Toastify__toast--error   { border-color: rgba(220, 38, 38, 0.4) !important; }
 .Toastify__progress-bar--success { background: #22c55e !important; }
 .Toastify__progress-bar--error   { background: #dc2626 !important; }
+
+/* Dark mode helpers */
+.dark-theme-transition {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}

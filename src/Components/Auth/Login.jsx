@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowRight, FaGoogle, FaGithub } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowRight, FaGoogle, FaGithub, FaSun, FaMoon } from 'react-icons/fa';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import BASE_URL from '../../global_url.js';
+import { useTheme } from '../../context/ThemeContext.jsx';
 
 function LoopixMark({ size = 44 }) {
   return (
@@ -25,6 +26,7 @@ function LoopixMark({ size = 44 }) {
 
 export default function Login() {
   const navigate = useNavigate();
+  const { isDark, toggleTheme } = useTheme();
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -49,11 +51,16 @@ export default function Login() {
     setError('');
     setSuccess('');
 
+    const wakeupTimer = setTimeout(() => {
+      toast.info("Waking up server, please wait a moment... ⏳", { autoClose: 5000 });
+    }, 3500);
+
     try {
       const response = await axios.post(`${BASE_URL}/login`, {
         email: form.email,
         password: form.password,
-      });
+      }, { timeout: 60000 });
+      clearTimeout(wakeupTimer);
 
       const data = response.data;
 
@@ -65,7 +72,6 @@ export default function Login() {
         localStorage.setItem('auth_token', data.token);
       }
       localStorage.setItem('loopix_user', JSON.stringify(data.user));
-      // Notify Navbar on the same tab to re-read auth state (no refresh needed)
       window.dispatchEvent(new Event('loopix-auth-change'));
 
       setSuccess('Login successful! Redirecting...');
@@ -76,10 +82,12 @@ export default function Login() {
       }, 1200);
 
     } catch (err) {
+      clearTimeout(wakeupTimer);
       const msg = err.response?.data?.msg || err.message || 'Something went wrong. Please try again.';
       setError(msg);
       toast.error(msg);
     } finally {
+      clearTimeout(wakeupTimer);
       setLoading(false);
     }
   };
@@ -88,10 +96,36 @@ export default function Login() {
     window.location.href = `${BASE_URL}/auth/google`;
   };
 
+  const labelStyle = {
+    display: "block", marginBottom: "0.375rem",
+    fontSize: "0.65rem", fontWeight: "700",
+    color: isDark ? "#cbd5e1" : "#4b5563", letterSpacing: "2px",
+  };
+
+  const inputStyle = {
+    width: "100%", paddingTop: "0.7rem", paddingBottom: "0.7rem",
+    paddingLeft: "2.5rem", paddingRight: "2.5rem",
+    background: isDark ? "#0f172a" : "#f9fafb",
+    border: isDark ? "1px solid #475569" : "1px solid #d1d5db",
+    borderRadius: "12px", color: isDark ? "#f8fafc" : "#111827",
+    fontSize: "0.875rem", transition: "all 0.2s ease", boxSizing: "border-box",
+  };
+
+  const socialBtnStyle = {
+    flex: 1, padding: "0.65rem",
+    borderRadius: "12px", border: isDark ? "1px solid #475569" : "1px solid #d1d5db",
+    background: isDark ? "#0f172a" : "#ffffff",
+    color: isDark ? "#f8fafc" : "#374151", fontSize: "0.8rem", fontWeight: "600",
+    display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+    cursor: "pointer", transition: "all 0.2s ease",
+  };
+
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%)",
+      background: isDark
+        ? "linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e293b 100%)"
+        : "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -99,18 +133,37 @@ export default function Login() {
       position: "relative",
       overflow: "hidden",
       padding: "2rem 1rem",
+      transition: "background 0.3s ease"
     }}>
+      {/* Floating Theme Switcher */}
+      <button
+        onClick={toggleTheme}
+        title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        style={{
+          position: "absolute", top: "20px", right: "20px", zIndex: 20,
+          width: "40px", height: "40px", borderRadius: "50%",
+          border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
+          background: isDark ? "#1e293b" : "#ffffff",
+          color: isDark ? "#fbbf24" : "#4b5563",
+          cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "1.1rem", boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          transition: "all 0.2s ease"
+        }}
+      >
+        {isDark ? <FaSun /> : <FaMoon />}
+      </button>
+
       {/* Background blobs */}
       <div style={{
         position: "fixed", top: 0, right: 0,
         width: "500px", height: "500px",
-        background: "radial-gradient(circle, rgba(220,38,38,0.06) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(220,38,38,0.08) 0%, transparent 70%)",
         transform: "translate(30%, -30%)", pointerEvents: "none"
       }} />
       <div style={{
         position: "fixed", bottom: 0, left: 0,
         width: "400px", height: "400px",
-        background: "radial-gradient(circle, rgba(220,38,38,0.04) 0%, transparent 70%)",
+        background: "radial-gradient(circle, rgba(220,38,38,0.05) 0%, transparent 70%)",
         transform: "translate(-30%, 30%)", pointerEvents: "none"
       }} />
 
@@ -123,11 +176,11 @@ export default function Login() {
           zIndex: 10,
           width: "100%",
           maxWidth: "420px",
-          background: "rgba(255, 255, 255, 0.8)",
+          background: isDark ? "rgba(30, 41, 59, 0.85)" : "rgba(255, 255, 255, 0.8)",
           backdropFilter: "blur(24px)",
-          border: "1px solid rgba(0, 0, 0, 0.06)",
+          border: isDark ? "1px solid rgba(255, 255, 255, 0.1)" : "1px solid rgba(0, 0, 0, 0.06)",
           borderRadius: "24px",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)",
+          boxShadow: isDark ? "0 25px 50px -12px rgba(0, 0, 0, 0.5)" : "0 25px 50px -12px rgba(0, 0, 0, 0.08)",
           overflow: "hidden",
         }}
       >
@@ -146,10 +199,12 @@ export default function Login() {
             </motion.div>
             <span style={{
               fontSize: "1.875rem", fontWeight: "900", letterSpacing: "4px",
-              background: "linear-gradient(90deg, #111827 0%, #dc2626 60%, #991b1b 100%)",
+              background: isDark
+                ? "linear-gradient(90deg, #ffffff 0%, #ef4444 60%, #dc2626 100%)"
+                : "linear-gradient(90deg, #111827 0%, #dc2626 60%, #991b1b 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
             }}>LOOPIX</span>
-            <span style={{ marginTop: "0.375rem", fontSize: "0.65rem", fontWeight: "700", color: "#6b7280", letterSpacing: "4px" }}>
+            <span style={{ marginTop: "0.375rem", fontSize: "0.65rem", fontWeight: "700", color: isDark ? "#94a3b8" : "#6b7280", letterSpacing: "4px" }}>
               WELCOME BACK
             </span>
           </div>
@@ -159,7 +214,7 @@ export default function Login() {
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                style={{ marginBottom: "1rem", padding: "0.75rem 1rem", background: "#fef2f2", border: "1px solid #fee2e2", borderRadius: "12px", color: "#b91c1c", fontSize: "0.825rem", fontWeight: "500" }}
+                style={{ marginBottom: "1rem", padding: "0.75rem 1rem", background: isDark ? "rgba(185, 28, 28, 0.2)" : "#fef2f2", border: isDark ? "1px solid rgba(185, 28, 28, 0.4)" : "1px solid #fee2e2", borderRadius: "12px", color: isDark ? "#fca5a5" : "#b91c1c", fontSize: "0.825rem", fontWeight: "500" }}
               >
                 ⚠️ {error}
               </motion.div>
@@ -167,7 +222,7 @@ export default function Login() {
             {success && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                style={{ marginBottom: "1rem", padding: "0.75rem 1rem", background: "#f0fdf4", border: "1px solid #dcfce7", borderRadius: "12px", color: "#15803d", fontSize: "0.825rem", fontWeight: "500" }}
+                style={{ marginBottom: "1rem", padding: "0.75rem 1rem", background: isDark ? "rgba(21, 128, 61, 0.2)" : "#f0fdf4", border: isDark ? "1px solid rgba(21, 128, 61, 0.4)" : "1px solid #dcfce7", borderRadius: "12px", color: isDark ? "#86efac" : "#15803d", fontSize: "0.825rem", fontWeight: "500" }}
               >
                 ✅ {success}
               </motion.div>
@@ -182,7 +237,7 @@ export default function Login() {
               <div>
                 <label style={labelStyle}>EMAIL ADDRESS</label>
                 <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: "0.8rem" }}>
+                  <span style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: isDark ? "#64748b" : "#9ca3af", fontSize: "0.8rem" }}>
                     <FaEnvelope />
                   </span>
                   <input
@@ -198,7 +253,7 @@ export default function Login() {
               <div>
                 <label style={labelStyle}>PASSWORD</label>
                 <div style={{ position: "relative" }}>
-                  <span style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: "0.8rem" }}>
+                  <span style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)", color: isDark ? "#64748b" : "#9ca3af", fontSize: "0.8rem" }}>
                     <FaLock />
                   </span>
                   <input
@@ -209,7 +264,7 @@ export default function Login() {
                     style={inputStyle}
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "0.8rem" }}>
+                    style={{ position: "absolute", right: "12px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: isDark ? "#64748b" : "#9ca3af", cursor: "pointer", fontSize: "0.8rem" }}>
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </button>
                 </div>
@@ -218,7 +273,7 @@ export default function Login() {
 
             {/* Forgot */}
             <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
-              <Link to="/forgot-password" style={{ fontSize: "0.75rem", color: "#6b7280", textDecoration: "none", fontWeight: "500" }}>
+              <Link to="/forgot-password" style={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#6b7280", textDecoration: "none", fontWeight: "500" }}>
                 Forgot password?
               </Link>
             </div>
@@ -255,9 +310,9 @@ export default function Login() {
 
           {/* Divider */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "1.5rem 0" }}>
-            <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
-            <span style={{ fontSize: "0.65rem", fontWeight: "700", color: "#9ca3af", letterSpacing: "3px" }}>OR</span>
-            <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+            <div style={{ flex: 1, height: "1px", background: isDark ? "#334155" : "#e5e7eb" }} />
+            <span style={{ fontSize: "0.65rem", fontWeight: "700", color: isDark ? "#64748b" : "#9ca3af", letterSpacing: "3px" }}>OR</span>
+            <div style={{ flex: 1, height: "1px", background: isDark ? "#334155" : "#e5e7eb" }} />
           </div>
 
           {/* Social */}
@@ -266,14 +321,14 @@ export default function Login() {
               <FaGoogle style={{ color: "#EA4335" }} /> Google
             </button>
             <button style={socialBtnStyle}>
-              <FaGithub style={{ color: "#181717" }} /> GitHub
+              <FaGithub style={{ color: isDark ? "#f8fafc" : "#181717" }} /> GitHub
             </button>
           </div>
 
           {/* Footer */}
-          <p style={{ textAlign: "center", fontSize: "0.85rem", color: "#4b5563", marginTop: "1.5rem" }}>
+          <p style={{ textAlign: "center", fontSize: "0.85rem", color: isDark ? "#94a3b8" : "#4b5563", marginTop: "1.5rem" }}>
             Don't have an account?{" "}
-            <Link to="/signup" style={{ color: "#dc2626", fontWeight: "700", textDecoration: "none" }}>
+            <Link to="/signup" style={{ color: "#ef4444", fontWeight: "700", textDecoration: "none" }}>
               Sign up
             </Link>
           </p>
@@ -281,33 +336,9 @@ export default function Login() {
       </motion.div>
 
       <style>{`
-        input::placeholder { color: #9ca3af !important; }
+        input::placeholder { color: ${isDark ? '#64748b' : '#9ca3af'} !important; }
         input:focus { outline: none !important; border-color: rgba(220,38,38,0.5) !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.15) !important; }
       `}</style>
     </div>
   );
 }
-
-const labelStyle = {
-  display: "block", marginBottom: "0.375rem",
-  fontSize: "0.65rem", fontWeight: "700",
-  color: "#4b5563", letterSpacing: "2px",
-};
-
-const inputStyle = {
-  width: "100%", paddingTop: "0.7rem", paddingBottom: "0.7rem",
-  paddingLeft: "2.5rem", paddingRight: "2.5rem",
-  background: "#f9fafb",
-  border: "1px solid #d1d5db",
-  borderRadius: "12px", color: "#111827",
-  fontSize: "0.875rem", transition: "all 0.2s ease", boxSizing: "border-box",
-};
-
-const socialBtnStyle = {
-  flex: 1, padding: "0.65rem",
-  borderRadius: "12px", border: "1px solid #d1d5db",
-  background: "#ffffff",
-  color: "#374151", fontSize: "0.8rem", fontWeight: "600",
-  display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-  cursor: "pointer", transition: "all 0.2s ease",
-};

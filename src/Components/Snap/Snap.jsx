@@ -5,6 +5,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { io } from "socket.io-client";
 import BASE_URL from "../../global_url.js";
+import { useTheme } from "../../context/ThemeContext.jsx";
 import {
   FaCamera,
   FaSyncAlt,
@@ -61,6 +62,7 @@ const avatarColors = ["#dc2626", "#7c3aed", "#0891b2", "#059669", "#d97706", "#d
 
 export default function Snap() {
   const navigate = useNavigate();
+  const { isDark } = useTheme();
 
   /* ── state ── */
   const [stream, setStream]             = useState(null);
@@ -335,7 +337,7 @@ export default function Snap() {
       <div
         style={{
           ...wrapperStyle,
-          background: "#f9fafb",
+          background: isDark ? "#0f172a" : "#f9fafb",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -346,14 +348,14 @@ export default function Snap() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           style={{
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
+            background: isDark ? "#1e293b" : "#ffffff",
+            border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
             borderRadius: "20px",
             padding: "2.5rem 2rem",
             maxWidth: "380px",
             width: "90%",
             textAlign: "center",
-            boxShadow: "0 12px 40px rgba(0,0,0,0.06)",
+            boxShadow: isDark ? "0 12px 40px rgba(0,0,0,0.4)" : "0 12px 40px rgba(0,0,0,0.06)",
           }}
         >
           {/* icon */}
@@ -883,7 +885,7 @@ export default function Snap() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               style={{
-                background: "#ffffff",
+                background: isDark ? "#1e293b" : "#ffffff",
                 borderRadius: "20px",
                 width: "100%",
                 maxWidth: "380px",
@@ -891,36 +893,36 @@ export default function Snap() {
                 display: "flex",
                 flexDirection: "column",
                 overflow: "hidden",
-                boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
+                boxShadow: isDark ? "0 20px 50px rgba(0,0,0,0.6)" : "0 20px 50px rgba(0,0,0,0.3)",
               }}
             >
               {/* Header */}
               <div style={{
                 padding: "1.25rem 1.5rem",
-                borderBottom: "1px solid #f3f4f6",
+                borderBottom: isDark ? "1px solid #334155" : "1px solid #f3f4f6",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between"
               }}>
                 <div>
-                  <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827", margin: 0 }}>Send Snap</h3>
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: isDark ? "#f8fafc" : "#111827", margin: 0 }}>Send Snap</h3>
                   {selectedFriends.length > 0 && (
-                    <p style={{ fontSize: "0.72rem", color: "#dc2626", fontWeight: 700, margin: "2px 0 0" }}>
+                    <p style={{ fontSize: "0.72rem", color: "#ef4444", fontWeight: 700, margin: "2px 0 0" }}>
                       {selectedFriends.length} friend{selectedFriends.length > 1 ? "s" : ""} selected
                     </p>
                   )}
                 </div>
                 <button
                   onClick={() => { setShowSendModal(false); setSelectedFriends([]); }}
-                  style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "1rem" }}
+                  style={{ background: "none", border: "none", color: isDark ? "#64748b" : "#9ca3af", cursor: "pointer", fontSize: "1rem" }}
                 >
                   <FaTimes />
                 </button>
               </div>
 
               {/* Search Friends */}
-              <div style={{ padding: "0.875rem 1rem", borderBottom: "1px solid #f3f4f6", position: "relative" }}>
-                <FaSearch style={{ position: "absolute", left: "20px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: "0.8rem" }} />
+              <div style={{ padding: "0.875rem 1rem", borderBottom: isDark ? "1px solid #334155" : "1px solid #f3f4f6", position: "relative" }}>
+                <FaSearch style={{ position: "absolute", left: "20px", top: "50%", transform: "translateY(-50%)", color: isDark ? "#64748b" : "#9ca3af", fontSize: "0.8rem" }} />
                 <input
                   type="text"
                   placeholder="Search friends..."
@@ -930,7 +932,9 @@ export default function Snap() {
                     width: "100%",
                     padding: "0.5rem 1rem 0.5rem 2.2rem",
                     borderRadius: "10px",
-                    border: "1px solid #e5e7eb",
+                    border: isDark ? "1px solid #475569" : "1px solid #e5e7eb",
+                    background: isDark ? "#0f172a" : "#ffffff",
+                    color: isDark ? "#f8fafc" : "#111827",
                     fontSize: "0.8rem",
                     outline: "none",
                     fontFamily: font,
@@ -945,7 +949,7 @@ export default function Snap() {
                     <div style={{ display: "inline-block", width: "24px", height: "24px", border: "2px solid #dc2626", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                   </div>
                 ) : friends.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "2rem 1rem", color: "#9ca3af", fontSize: "0.8rem" }}>
+                  <div style={{ textAlign: "center", padding: "2rem 1rem", color: isDark ? "#64748b" : "#9ca3af", fontSize: "0.8rem" }}>
                     No friends found
                   </div>
                 ) : (
@@ -964,8 +968,12 @@ export default function Snap() {
                           gap: "10px",
                           padding: "0.6rem 0.8rem",
                           borderRadius: "12px",
-                          background: isSelected ? "rgba(220, 38, 38, 0.07)" : "transparent",
-                          border: isSelected ? "1px solid rgba(220,38,38,0.2)" : "1px solid transparent",
+                          background: isSelected
+                            ? (isDark ? "rgba(220, 38, 38, 0.2)" : "rgba(220, 38, 38, 0.07)")
+                            : "transparent",
+                          border: isSelected
+                            ? (isDark ? "1px solid rgba(220, 38, 38, 0.4)" : "1px solid rgba(220, 38, 38, 0.2)")
+                            : "1px solid transparent",
                           cursor: "pointer",
                           marginBottom: "2px",
                           transition: "all 0.15s ease",
@@ -990,14 +998,14 @@ export default function Snap() {
                         {/* Name + streak */}
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <p style={{ fontSize: "0.8rem", fontWeight: "700", color: "#111827", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</p>
+                            <p style={{ fontSize: "0.8rem", fontWeight: "700", color: isDark ? "#f8fafc" : "#111827", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</p>
                             {streak > 0 && (
                               <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "0.68rem", fontWeight: "800", color: "#f97316" }}>
                                 <FaFire style={{ fontSize: "0.65rem" }} />{streak}
                               </span>
                             )}
                           </div>
-                          <p style={{ fontSize: "0.7rem", color: "#6b7280", margin: 0 }}>{f.email}</p>
+                          <p style={{ fontSize: "0.7rem", color: isDark ? "#94a3b8" : "#6b7280", margin: 0 }}>{f.email}</p>
                         </div>
                         {/* Checkbox */}
                         <div style={{

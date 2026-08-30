@@ -5,10 +5,12 @@ import { IoPeopleSharp } from 'react-icons/io5';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import BASE_URL from '../../global_url.js';
+import { useTheme } from '../../context/ThemeContext.jsx';
 
 const avatarColors = ["#dc2626", "#7c3aed", "#0891b2", "#059669", "#d97706", "#db2777"];
 
 export default function Friends() {
+  const { isDark } = useTheme();
   const [tab, setTab] = useState('friends');
   const [search, setSearch] = useState('');
   const [requests, setRequests] = useState([]);
@@ -27,7 +29,6 @@ export default function Friends() {
     fetchData();
   }, [tab]);
 
-  // Debounced search handler
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       if (search.trim()) {
@@ -132,7 +133,6 @@ export default function Friends() {
       if (res.data.status) {
         toast.success("Friend request sent! ✉️");
         setSent(prev => [...prev, id]);
-        // Update suggestions locally
         setSuggestions(prev => prev.filter(s => s.id !== id));
         if (search.trim()) {
           setSearchResults(prev => prev.map(u => u.id === id ? { ...u, status: 'sent' } : u));
@@ -187,29 +187,31 @@ export default function Friends() {
   return (
     <div style={{
       minHeight: "calc(100vh - 60px)",
-      background: "#f9fafb",
+      background: isDark ? "#0f172a" : "#f9fafb",
       fontFamily: "'Inter','Segoe UI',sans-serif",
       padding: "1.5rem 1rem 5rem",
       paddingBottom: "5rem",
+      transition: "background 0.3s ease"
     }}>
       <div style={{ maxWidth: "700px", margin: "0 auto" }}>
 
         {/* Header */}
         <div style={{ marginBottom: "1.5rem" }}>
-          <h1 style={{ color: "#111827", fontSize: "1.5rem", fontWeight: "900", letterSpacing: "0.5px", marginBottom: "0.25rem" }}>Friends</h1>
-          <p style={{ color: "#6b7280", fontSize: "0.825rem" }}>Manage your Loopix connections</p>
+          <h1 style={{ color: isDark ? "#f8fafc" : "#111827", fontSize: "1.5rem", fontWeight: "900", letterSpacing: "0.5px", marginBottom: "0.25rem" }}>Friends</h1>
+          <p style={{ color: isDark ? "#94a3b8" : "#6b7280", fontSize: "0.825rem" }}>Manage your Loopix connections</p>
         </div>
 
         {/* Search */}
         <div style={{ position: "relative", marginBottom: "1.25rem" }}>
-          <FiSearch style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: "0.9rem" }} />
+          <FiSearch style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: isDark ? "#64748b" : "#9ca3af", fontSize: "0.9rem" }} />
           <input
             type="text" placeholder="Search people by username or email..." value={search}
             onChange={e => setSearch(e.target.value)}
             style={{
               width: "100%", padding: "0.7rem 1rem 0.7rem 2.5rem",
-              background: "#ffffff", border: "1px solid #d1d5db",
-              borderRadius: "12px", color: "#111827", fontSize: "0.875rem",
+              background: isDark ? "#1e293b" : "#ffffff",
+              border: isDark ? "1px solid #334155" : "1px solid #d1d5db",
+              borderRadius: "12px", color: isDark ? "#f8fafc" : "#111827", fontSize: "0.875rem",
               boxSizing: "border-box", outline: "none",
             }}
           />
@@ -217,13 +219,13 @@ export default function Friends() {
 
         {/* Tabs */}
         {!search.trim() && (
-          <div style={{ display: "flex", gap: "0.375rem", marginBottom: "1.25rem", background: "#f3f4f6", padding: "0.25rem", borderRadius: "12px", border: "1px solid #e5e7eb" }}>
+          <div style={{ display: "flex", gap: "0.375rem", marginBottom: "1.25rem", background: isDark ? "#1e293b" : "#f3f4f6", padding: "0.25rem", borderRadius: "12px", border: isDark ? "1px solid #334155" : "1px solid #e5e7eb" }}>
             {tabs.map(t => (
               <button key={t.id} onClick={() => setTab(t.id)} style={{
                 flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "0.4rem",
                 padding: "0.6rem 0.5rem", borderRadius: "10px", border: "none", cursor: "pointer",
                 background: tab === t.id ? "linear-gradient(135deg,#dc2626,#b91c1c)" : "transparent",
-                color: tab === t.id ? "#fff" : "#4b5563",
+                color: tab === t.id ? "#fff" : (isDark ? "#94a3b8" : "#4b5563"),
                 fontSize: "0.775rem", fontWeight: "700", transition: "all 0.2s ease",
                 boxShadow: tab === t.id ? "0 4px 12px rgba(220,38,38,0.15)" : "none",
               }}>
@@ -251,22 +253,22 @@ export default function Friends() {
           {search.trim() ? (
             /* Search Results View */
             <motion.div key="search-results" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
-              <h3 style={{ color: "#374151", fontSize: "0.875rem", fontWeight: "700", marginBottom: "0.5rem" }}>Search Results</h3>
+              <h3 style={{ color: isDark ? "#cbd5e1" : "#374151", fontSize: "0.875rem", fontWeight: "700", marginBottom: "0.5rem" }}>Search Results</h3>
               {searchResults.length === 0 ? (
-                <EmptyState icon={<FiSearch />} text="No users found" sub="Try searching for another name or email" />
+                <EmptyState isDark={isDark} icon={<FiSearch />} text="No users found" sub="Try searching for another name or email" />
               ) : searchResults.map((u, i) => (
-                <div key={u.id} style={{ display: "flex", alignItems: "center", gap: "0.875rem", padding: "0.875rem 1rem", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "14px", boxShadow: "0 2px 4px rgba(0,0,0,0.01)" }}>
+                <div key={u.id} style={{ display: "flex", alignItems: "center", gap: "0.875rem", padding: "0.875rem 1rem", background: isDark ? "#1e293b" : "#ffffff", border: isDark ? "1px solid #334155" : "1px solid #e5e7eb", borderRadius: "14px", boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 4px rgba(0,0,0,0.01)" }}>
                   <div style={{ width: "46px", height: "46px", borderRadius: "50%", background: `linear-gradient(135deg, ${avatarColors[i % avatarColors.length]}, ${avatarColors[i % avatarColors.length]}88)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: "800", fontSize: "0.9rem" }}>{u.name.charAt(0).toUpperCase()}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ color: "#111827", fontWeight: "700", fontSize: "0.875rem", margin: 0 }}>{u.name}</p>
-                    <p style={{ color: "#6b7280", fontSize: "0.725rem", margin: "0.1rem 0 0" }}>{u.email}</p>
+                    <p style={{ color: isDark ? "#f8fafc" : "#111827", fontWeight: "700", fontSize: "0.875rem", margin: 0 }}>{u.name}</p>
+                    <p style={{ color: isDark ? "#94a3b8" : "#6b7280", fontSize: "0.725rem", margin: "0.1rem 0 0" }}>{u.email}</p>
                   </div>
                   <div>
                     {u.status === 'friend' && (
-                      <span style={{ fontSize: "0.75rem", color: "#16a34a", fontWeight: "700", padding: "0.4rem 0.75rem", background: "#f0fdf4", borderRadius: "8px" }}>✓ Friends</span>
+                      <span style={{ fontSize: "0.75rem", color: "#22c55e", fontWeight: "700", padding: "0.4rem 0.75rem", background: isDark ? "rgba(34, 197, 94, 0.15)" : "#f0fdf4", borderRadius: "8px" }}>✓ Friends</span>
                     )}
                     {u.status === 'sent' && (
-                      <button onClick={() => cancelRequest(u.id)} style={{ padding: "0.45rem 0.75rem", background: "#f3f4f6", border: "1px solid #d1d5db", borderRadius: "8px", color: "#4b5563", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                      <button onClick={() => cancelRequest(u.id)} style={{ padding: "0.45rem 0.75rem", background: isDark ? "#0f172a" : "#f3f4f6", border: isDark ? "1px solid #334155" : "1px solid #d1d5db", borderRadius: "8px", color: isDark ? "#cbd5e1" : "#4b5563", fontSize: "0.75rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem" }}>
                         <FiUserX /> Cancel Request
                       </button>
                     )}
@@ -292,26 +294,26 @@ export default function Friends() {
                 {tab === 'friends' && (
                   <motion.div key="friends" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                     {friends.length === 0 ? (
-                      <EmptyState icon={<FiUsers />} text="No friends yet" sub="Add some friends from the suggestions tab!" />
+                      <EmptyState isDark={isDark} icon={<FiUsers />} text="No friends yet" sub="Add some friends from the suggestions tab!" />
                     ) : friends.map((f, i) => (
                       <motion.div key={f.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                        style={{ display: "flex", alignItems: "center", gap: "0.875rem", padding: "0.875rem 1rem", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "14px", boxShadow: "0 2px 4px rgba(0,0,0,0.01)" }}>
+                        style={{ display: "flex", alignItems: "center", gap: "0.875rem", padding: "0.875rem 1rem", background: isDark ? "#1e293b" : "#ffffff", border: isDark ? "1px solid #334155" : "1px solid #e5e7eb", borderRadius: "14px", boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 4px rgba(0,0,0,0.01)" }}>
                         <div style={{ position: "relative", flexShrink: 0 }}>
                           <div style={{ width: "46px", height: "46px", borderRadius: "50%", background: `linear-gradient(135deg, ${avatarColors[i % avatarColors.length]}, ${avatarColors[i % avatarColors.length]}88)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: "800", fontSize: "0.9rem" }}>{f.avatar}</div>
-                          {f.online && <div style={{ position: "absolute", bottom: "1px", right: "1px", width: "11px", height: "11px", background: "#22c55e", border: "2px solid #ffffff", borderRadius: "50%" }} />}
+                          {f.online && <div style={{ position: "absolute", bottom: "1px", right: "1px", width: "11px", height: "11px", background: "#22c55e", border: isDark ? "2px solid #1e293b" : "2px solid #ffffff", borderRadius: "50%" }} />}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ color: "#111827", fontWeight: "700", fontSize: "0.875rem", margin: 0 }}>{f.name}</p>
-                          <p style={{ color: "#6b7280", fontSize: "0.725rem", margin: "0.1rem 0 0", display: "flex", alignItems: "center", gap: "0.3rem" }}>
-                            <span style={{ color: f.online ? "#16a34a" : "#cbd5e1" }}>●</span>
+                          <p style={{ color: isDark ? "#f8fafc" : "#111827", fontWeight: "700", fontSize: "0.875rem", margin: 0 }}>{f.name}</p>
+                          <p style={{ color: isDark ? "#94a3b8" : "#6b7280", fontSize: "0.725rem", margin: "0.1rem 0 0", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                            <span style={{ color: f.online ? "#22c55e" : (isDark ? "#475569" : "#cbd5e1") }}>●</span>
                             {f.online ? "Online" : "Offline"}
                           </p>
                         </div>
                         <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
-                          <button onClick={() => window.location.href = '/chats'} style={{ padding: "0.4rem 0.75rem", background: "rgba(220,38,38,0.05)", border: "1px solid rgba(220,38,38,0.15)", borderRadius: "8px", color: "#dc2626", fontSize: "0.75rem", fontWeight: "600", cursor: "pointer" }}>
+                          <button onClick={() => window.location.href = '/chats'} style={{ padding: "0.4rem 0.75rem", background: isDark ? "rgba(220,38,38,0.15)" : "rgba(220,38,38,0.05)", border: isDark ? "1px solid rgba(220,38,38,0.3)" : "1px solid rgba(220,38,38,0.15)", borderRadius: "8px", color: "#ef4444", fontSize: "0.75rem", fontWeight: "600", cursor: "pointer" }}>
                             Chat
                           </button>
-                          <button onClick={() => removeFriend(f.id)} style={{ padding: "0.4rem", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: "8px", color: "#9ca3af", fontSize: "0.85rem", cursor: "pointer", display: "flex", alignItems: "center" }}>
+                          <button onClick={() => removeFriend(f.id)} style={{ padding: "0.4rem", background: isDark ? "#0f172a" : "#f9fafb", border: isDark ? "1px solid #334155" : "1px solid #e5e7eb", borderRadius: "8px", color: isDark ? "#64748b" : "#9ca3af", fontSize: "0.85rem", cursor: "pointer", display: "flex", alignItems: "center" }}>
                             <FiUserX />
                           </button>
                         </div>
@@ -324,14 +326,14 @@ export default function Friends() {
                 {tab === 'requests' && (
                   <motion.div key="requests" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                     {requests.length === 0 ? (
-                      <EmptyState icon={<FiUserPlus />} text="No pending requests" sub="You're all caught up!" />
+                      <EmptyState isDark={isDark} icon={<FiUserPlus />} text="No pending requests" sub="You're all caught up!" />
                     ) : requests.map((r, i) => (
                       <motion.div key={r.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                        style={{ display: "flex", alignItems: "center", gap: "0.875rem", padding: "0.875rem 1rem", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "14px", boxShadow: "0 2px 4px rgba(0,0,0,0.01)" }}>
+                        style={{ display: "flex", alignItems: "center", gap: "0.875rem", padding: "0.875rem 1rem", background: isDark ? "#1e293b" : "#ffffff", border: isDark ? "1px solid #334155" : "1px solid #e5e7eb", borderRadius: "14px", boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 4px rgba(0,0,0,0.01)" }}>
                         <div style={{ width: "46px", height: "46px", borderRadius: "50%", background: `linear-gradient(135deg, ${avatarColors[i % avatarColors.length]}, ${avatarColors[i % avatarColors.length]}88)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: "800", fontSize: "0.9rem", flexShrink: 0 }}>{r.avatar}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ color: "#111827", fontWeight: "700", fontSize: "0.875rem", margin: 0 }}>{r.name}</p>
-                          <p style={{ color: "#6b7280", fontSize: "0.725rem", margin: "0.1rem 0 0" }}>{r.email}</p>
+                          <p style={{ color: isDark ? "#f8fafc" : "#111827", fontWeight: "700", fontSize: "0.875rem", margin: 0 }}>{r.name}</p>
+                          <p style={{ color: isDark ? "#94a3b8" : "#6b7280", fontSize: "0.725rem", margin: "0.1rem 0 0" }}>{r.email}</p>
                         </div>
                         <div style={{ display: "flex", gap: "0.4rem", flexShrink: 0 }}>
                           <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => acceptRequest(r.id)}
@@ -339,7 +341,7 @@ export default function Friends() {
                             <FiUserCheck style={{ fontSize: "0.85rem" }} /> Accept
                           </motion.button>
                           <button onClick={() => rejectRequest(r.id)}
-                            style={{ padding: "0.45rem 0.75rem", background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: "8px", color: "#4b5563", fontSize: "0.75rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                            style={{ padding: "0.45rem 0.75rem", background: isDark ? "#0f172a" : "#f3f4f6", border: isDark ? "1px solid #334155" : "1px solid #e5e7eb", borderRadius: "8px", color: isDark ? "#cbd5e1" : "#4b5563", fontSize: "0.75rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "0.3rem" }}>
                             <FiUserX style={{ fontSize: "0.85rem" }} /> Decline
                           </button>
                         </div>
@@ -352,21 +354,21 @@ export default function Friends() {
                 {tab === 'suggestions' && (
                   <motion.div key="suggestions" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
                     {suggestions.length === 0 ? (
-                      <EmptyState icon={<IoPeopleSharp />} text="No suggestions" sub="All caught up!" />
+                      <EmptyState isDark={isDark} icon={<IoPeopleSharp />} text="No suggestions" sub="All caught up!" />
                     ) : suggestions.map((s, i) => (
                       <motion.div key={s.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
-                        style={{ display: "flex", alignItems: "center", gap: "0.875rem", padding: "0.875rem 1rem", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "14px", boxShadow: "0 2px 4px rgba(0,0,0,0.01)" }}>
+                        style={{ display: "flex", alignItems: "center", gap: "0.875rem", padding: "0.875rem 1rem", background: isDark ? "#1e293b" : "#ffffff", border: isDark ? "1px solid #334155" : "1px solid #e5e7eb", borderRadius: "14px", boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 4px rgba(0,0,0,0.01)" }}>
                         <div style={{ width: "46px", height: "46px", borderRadius: "50%", background: `linear-gradient(135deg, ${avatarColors[i % avatarColors.length]}, ${avatarColors[i % avatarColors.length]}88)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: "800", fontSize: "0.8rem", flexShrink: 0 }}>{s.avatar}</div>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ color: "#111827", fontWeight: "700", fontSize: "0.875rem", margin: 0 }}>{s.name}</p>
-                          <p style={{ color: "#6b7280", fontSize: "0.725rem", margin: "0.1rem 0 0" }}>{s.email}</p>
+                          <p style={{ color: isDark ? "#f8fafc" : "#111827", fontWeight: "700", fontSize: "0.875rem", margin: 0 }}>{s.name}</p>
+                          <p style={{ color: isDark ? "#94a3b8" : "#6b7280", fontSize: "0.725rem", margin: "0.1rem 0 0" }}>{s.email}</p>
                         </div>
                         <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                           onClick={() => sent.includes(s.id) ? cancelRequest(s.id) : sendRequest(s.id)}
                           style={{
                             padding: "0.45rem 0.75rem", border: "none", borderRadius: "8px",
-                            background: sent.includes(s.id) ? "#f3f4f6" : "linear-gradient(135deg,#dc2626,#b91c1c)",
-                            color: sent.includes(s.id) ? "#4b5563" : "#fff",
+                            background: sent.includes(s.id) ? (isDark ? "#0f172a" : "#f3f4f6") : "linear-gradient(135deg,#dc2626,#b91c1c)",
+                            color: sent.includes(s.id) ? (isDark ? "#cbd5e1" : "#4b5563") : "#fff",
                             fontSize: "0.75rem", fontWeight: "700", cursor: "pointer",
                             display: "flex", alignItems: "center", gap: "0.3rem", flexShrink: 0,
                             boxShadow: sent.includes(s.id) ? "none" : "0 4px 12px rgba(220,38,38,0.15)",
@@ -386,7 +388,7 @@ export default function Friends() {
       </div>
 
       <style>{`
-        input::placeholder { color: #9ca3af !important; }
+        input::placeholder { color: ${isDark ? '#64748b' : '#9ca3af'} !important; }
         input:focus { outline: none !important; border-color: rgba(220,38,38,0.4) !important; }
         @keyframes spin {
           to { transform: rotate(360deg); }
@@ -396,11 +398,11 @@ export default function Friends() {
   );
 }
 
-function EmptyState({ icon, text, sub }) {
+function EmptyState({ icon, text, sub, isDark }) {
   return (
-    <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#9ca3af" }}>
+    <div style={{ textAlign: "center", padding: "3rem 1rem", color: isDark ? "#64748b" : "#9ca3af" }}>
       <div style={{ fontSize: "3rem", marginBottom: "0.75rem", color: "rgba(220,38,38,0.15)" }}>{icon}</div>
-      <p style={{ fontSize: "0.9rem", fontWeight: "600", color: "#4b5563" }}>{text}</p>
+      <p style={{ fontSize: "0.9rem", fontWeight: "600", color: isDark ? "#cbd5e1" : "#4b5563" }}>{text}</p>
       <p style={{ fontSize: "0.775rem", marginTop: "0.25rem" }}>{sub}</p>
     </div>
   );

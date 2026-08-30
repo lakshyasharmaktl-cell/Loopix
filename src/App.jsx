@@ -10,6 +10,7 @@ import Snap from './Components/Snap/Snap.jsx';
 import Profile from './Components/Profile/Profile.jsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { ThemeProvider, useTheme } from './context/ThemeContext.jsx';
 
 // Helper to check if valid user authentication exists
 const isAuthenticated = () => {
@@ -41,7 +42,8 @@ function PublicRoute({ children }) {
   return children;
 }
 
-export default function App() {
+function MainLayout() {
+  const { isDark } = useTheme();
   const [, setAuthTick] = useState(0);
 
   useEffect(() => {
@@ -55,49 +57,54 @@ export default function App() {
   }, []);
 
   return (
-    <div>
-      <BrowserRouter>
-        <Navbar />
-        <Routes>
-          {/* Public Auth Routes */}
-          <Route path="/signup" element={<PublicRoute><Sign /></PublicRoute>} />
-          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/otp-verify" element={<PublicRoute><Otpsection /></PublicRoute>} />
-          <Route path="/otp-verify/:id" element={<PublicRoute><Otpsection /></PublicRoute>} />
+    <BrowserRouter>
+      <Navbar />
+      <Routes>
+        {/* Public Auth Routes */}
+        <Route path="/signup" element={<PublicRoute><Sign /></PublicRoute>} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/otp-verify" element={<PublicRoute><Otpsection /></PublicRoute>} />
+        <Route path="/otp-verify/:id" element={<PublicRoute><Otpsection /></PublicRoute>} />
 
-          {/* Protected Main App Routes */}
-          <Route path="/chats" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
-          <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
-          <Route path="/camera" element={<ProtectedRoute><Snap /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        {/* Protected Main App Routes */}
+        <Route path="/chats" element={<ProtectedRoute><Chats /></ProtectedRoute>} />
+        <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
+        <Route path="/camera" element={<ProtectedRoute><Snap /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
-          {/* Root route redirect based on auth */}
-          <Route
-            path="/"
-            element={
-              isAuthenticated() ? (
-                <Navigate to="/chats" replace />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
+        {/* Root route redirect based on auth */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated() ? (
+              <Navigate to="/chats" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
 
-          {/* Fallback route */}
-          <Route
-            path="*"
-            element={
-              isAuthenticated() ? (
-                <Navigate to="/chats" replace />
-              ) : (
-                <Navigate to="/login" replace />
-              )
-            }
-          />
-        </Routes>
-        <ToastContainer position="top-right" autoClose={3000} theme="light" />
-      </BrowserRouter>
-    </div>
-  )
+        {/* Fallback route */}
+        <Route
+          path="*"
+          element={
+            isAuthenticated() ? (
+              <Navigate to="/chats" replace />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
+      </Routes>
+      <ToastContainer position="top-right" autoClose={3000} theme={isDark ? "dark" : "light"} />
+    </BrowserRouter>
+  );
 }
 
+export default function App() {
+  return (
+    <ThemeProvider>
+      <MainLayout />
+    </ThemeProvider>
+  )
+}

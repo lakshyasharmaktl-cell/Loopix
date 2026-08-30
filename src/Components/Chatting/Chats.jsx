@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from 'log'
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiSearch, FiSend, FiMoreVertical, FiPhone, FiVideo, FiSmile, FiPaperclip } from 'react-icons/fi'
@@ -6,6 +7,7 @@ import { FaFire } from 'react-icons/fa'
 import { io } from 'socket.io-client'
 import axios from 'axios'
 import BASE_URL from '../../global_url.js'
+import { useTheme } from '../../context/ThemeContext.jsx'
 
 /* ─── streak helpers ─── */
 const STREAK_KEY = "loopix_streaks";
@@ -29,20 +31,18 @@ function updateStreak(fId) {
   localStorage.setItem(STREAK_KEY, JSON.stringify(all));
 }
 
-
 const avatarColors = ["#dc2626", "#7c3aed", "#0891b2", "#059669", "#d97706", "#db2777"]
 
 export default function Chats() {
+  const { isDark } = useTheme();
   const [selected, setSelected] = useState(null)
   const [message, setMessage] = useState('')
   const [search, setSearch] = useState('')
   const [chatList, setChatList] = useState([])
   const [messages, setMessages] = useState([])
   const [user] = useState(() => JSON.parse(localStorage.getItem('loopix_user')) || null)
-  // Snap viewer overlay: { src, senderName }
   const [snapViewer, setSnapViewer] = useState(null)
 
-  // Track opened snaps in localStorage
   const [openedSnaps, setOpenedSnaps] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('loopix_opened_snaps')) || [];
@@ -65,7 +65,6 @@ export default function Chats() {
   const selectedChatRef = useRef(null)
   const messagesEndRef = useRef(null)
 
-  // Keep ref up to date to prevent closure stale states in socket listeners
   useEffect(() => {
     selectedChatRef.current = selected
     if (selected) {
@@ -78,7 +77,6 @@ export default function Chats() {
     return { headers: { 'x-api-key': token } };
   };
 
-  // Connect socket and fetch chat list on mount
   useEffect(() => {
     fetchChatList();
 
@@ -89,17 +87,14 @@ export default function Chats() {
     }
 
     socketRef.current.on('receive_message', (msg) => {
-      // If msg belongs to currently active conversation
       const currentActive = selectedChatRef.current;
       if (currentActive && (msg.sender === currentActive || msg.receiver === currentActive)) {
         setMessages(prev => {
           if (prev.some(m => m._id === msg._id)) return prev;
           return [...prev, msg];
         });
-        // Call read endpoint to mark as read
         axios.get(`${BASE_URL}/messages/${currentActive}`, getHeaders()).catch(err => console.error(err));
       }
-      // Refresh list to update previews
       fetchChatList();
     });
 
@@ -119,7 +114,6 @@ export default function Chats() {
     }
   }, [user]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
@@ -164,7 +158,6 @@ export default function Chats() {
   const filtered = chatList.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
   const selectedChat = chatList.find(c => c.id === selected)
 
-  // Format date helper
   const formatTime = (isoString) => {
     if (!isoString) return '';
     const date = new Date(isoString);
@@ -175,34 +168,37 @@ export default function Chats() {
     <div style={{
       height: "calc(100vh - 60px)",
       display: "flex",
-      background: "#f9fafb",
+      background: isDark ? "#0f172a" : "#f9fafb",
       fontFamily: "'Inter','Segoe UI',sans-serif",
+      transition: "background 0.3s ease"
     }}>
       {/* Sidebar */}
       <div style={{
         width: "360px",
         maxWidth: "360px",
-        borderRight: "1px solid #e5e7eb",
+        borderRight: isDark ? "1px solid #1e293b" : "1px solid #e5e7eb",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
         flexShrink: 0,
+        background: isDark ? "#0f172a" : "#f9fafb",
       }} className={`chats-sidebar${selected ? " hidden" : ""}`}>
         {/* Header */}
-        <div style={{ padding: "1.25rem 1rem 0.75rem", borderBottom: "1px solid #e5e7eb" }}>
-          <h2 style={{ color: "#111827", fontSize: "1.25rem", fontWeight: "800", marginBottom: "0.875rem", letterSpacing: "0.5px" }}>
+        <div style={{ padding: "1.25rem 1rem 0.75rem", borderBottom: isDark ? "1px solid #1e293b" : "1px solid #e5e7eb" }}>
+          <h2 style={{ color: isDark ? "#f8fafc" : "#111827", fontSize: "1.25rem", fontWeight: "800", marginBottom: "0.875rem", letterSpacing: "0.5px" }}>
             Messages
           </h2>
           {/* Search */}
           <div style={{ position: "relative" }}>
-            <FiSearch style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: "0.875rem" }} />
+            <FiSearch style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: isDark ? "#64748b" : "#9ca3af", fontSize: "0.875rem" }} />
             <input
               type="text" placeholder="Search chats..." value={search}
               onChange={e => setSearch(e.target.value)}
               style={{
                 width: "100%", padding: "0.6rem 0.75rem 0.6rem 2.25rem",
-                background: "#f3f4f6", border: "1px solid #e5e7eb",
-                borderRadius: "10px", color: "#111827", fontSize: "0.825rem",
+                background: isDark ? "#1e293b" : "#f3f4f6",
+                border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
+                borderRadius: "10px", color: isDark ? "#f8fafc" : "#111827", fontSize: "0.825rem",
                 boxSizing: "border-box", outline: "none",
               }}
             />
@@ -212,8 +208,8 @@ export default function Chats() {
         {/* Chat List */}
         <div style={{ flex: 1, overflowY: "auto", padding: "0.5rem" }}>
           {filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "3rem 1rem", color: "#9ca3af" }}>
-              <IoChatbubblesSharp style={{ fontSize: "2.5rem", marginBottom: "0.5rem", color: "rgba(220,38,38,0.1)" }} />
+            <div style={{ textAlign: "center", padding: "3rem 1rem", color: isDark ? "#64748b" : "#9ca3af" }}>
+              <IoChatbubblesSharp style={{ fontSize: "2.5rem", marginBottom: "0.5rem", color: "rgba(220,38,38,0.15)" }} />
               <p style={{ fontSize: "0.85rem", fontWeight: "600" }}>No conversations found</p>
               <p style={{ fontSize: "0.75rem", marginTop: "0.25rem" }}>Add friends to start chatting!</p>
             </div>
@@ -228,11 +224,15 @@ export default function Chats() {
                 display: "flex", alignItems: "center", gap: "0.75rem",
                 padding: "0.75rem 0.75rem",
                 borderRadius: "12px",
-                background: selected === chat.id ? "rgba(220,38,38,0.05)" : "transparent",
-                border: selected === chat.id ? "1px solid rgba(220,38,38,0.15)" : "1px solid transparent",
+                background: selected === chat.id
+                  ? (isDark ? "rgba(220, 38, 38, 0.2)" : "rgba(220,38,38,0.05)")
+                  : "transparent",
+                border: selected === chat.id
+                  ? (isDark ? "1px solid rgba(220, 38, 38, 0.3)" : "1px solid rgba(220,38,38,0.15)")
+                  : "1px solid transparent",
                 cursor: "pointer", transition: "all 0.15s ease", marginBottom: "2px",
               }}
-              whileHover={{ background: "rgba(0,0,0,0.025)" }}
+              whileHover={{ background: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.025)" }}
             >
               {/* Avatar */}
               <div style={{ position: "relative", flexShrink: 0 }}>
@@ -246,7 +246,7 @@ export default function Chats() {
                   <div style={{
                     position: "absolute", bottom: "1px", right: "1px",
                     width: "11px", height: "11px", background: "#22c55e",
-                    border: "2px solid #ffffff", borderRadius: "50%",
+                    border: isDark ? "2px solid #0f172a" : "2px solid #ffffff", borderRadius: "50%",
                   }} />
                 )}
               </div>
@@ -255,17 +255,17 @@ export default function Chats() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.2rem" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0 }}>
-                    <span style={{ color: "#111827", fontWeight: "700", fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{chat.name}</span>
+                    <span style={{ color: isDark ? "#f8fafc" : "#111827", fontWeight: "700", fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{chat.name}</span>
                     {getStreak(chat.id) > 0 && (
                       <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "0.68rem", fontWeight: "800", color: "#f97316", flexShrink: 0 }}>
                         <FaFire style={{ fontSize: "0.6rem" }} />{getStreak(chat.id)}
                       </span>
                     )}
                   </div>
-                  <span style={{ color: "#9ca3af", fontSize: "0.7rem", flexShrink: 0, marginLeft: "0.5rem" }}>{chat.time}</span>
+                  <span style={{ color: isDark ? "#64748b" : "#9ca3af", fontSize: "0.7rem", flexShrink: 0, marginLeft: "0.5rem" }}>{chat.time}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ color: "#6b7280", fontSize: "0.775rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: chat.unread > 0 ? "700" : "400" }}>
+                  <span style={{ color: isDark ? "#94a3b8" : "#6b7280", fontSize: "0.775rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: chat.unread > 0 ? "700" : "400" }}>
                     {chat.lastMsg?.startsWith('data:image/') ? "📷 Snap" : chat.lastMsg}
                   </span>
                   {chat.unread > 0 && (
@@ -284,29 +284,29 @@ export default function Chats() {
 
       {/* Chat Window */}
       {selected ? (
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: "#f3f4f6" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, background: isDark ? "#090d16" : "#f3f4f6" }}>
           {/* Chat Header */}
           <div style={{
-            padding: "0.875rem 1.25rem", borderBottom: "1px solid #e5e7eb",
+            padding: "0.875rem 1.25rem", borderBottom: isDark ? "1px solid #1e293b" : "1px solid #e5e7eb",
             display: "flex", alignItems: "center", gap: "0.75rem",
-            background: "#ffffff",
+            background: isDark ? "#1e293b" : "#ffffff",
           }}>
-            <button onClick={() => setSelected(null)} className="back-btn-chat" style={{ background: "none", border: "none", color: "#4b5563", cursor: "pointer", fontSize: "1.1rem", display: "none", marginRight: "0.25rem" }}>←</button>
+            <button onClick={() => setSelected(null)} className="back-btn-chat" style={{ background: "none", border: "none", color: isDark ? "#cbd5e1" : "#4b5563", cursor: "pointer", fontSize: "1.1rem", display: "none", marginRight: "0.25rem" }}>←</button>
             <div style={{ position: "relative" }}>
               <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: `linear-gradient(135deg, ${avatarColors[chatList.findIndex(c=>c.id===selected) % avatarColors.length || 0]}, ${avatarColors[chatList.findIndex(c=>c.id===selected) % avatarColors.length || 0]}88)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: "800", fontSize: "0.9rem" }}>
                 {selectedChat?.avatar}
               </div>
-              {selectedChat?.online && <div style={{ position: "absolute", bottom: "1px", right: "1px", width: "10px", height: "10px", background: "#22c55e", border: "2px solid #ffffff", borderRadius: "50%" }} />}
+              {selectedChat?.online && <div style={{ position: "absolute", bottom: "1px", right: "1px", width: "10px", height: "10px", background: "#22c55e", border: isDark ? "2px solid #1e293b" : "2px solid #ffffff", borderRadius: "50%" }} />}
             </div>
             <div style={{ flex: 1 }}>
-              <p style={{ color: "#111827", fontWeight: "700", fontSize: "0.9rem", margin: 0 }}>{selectedChat?.name}</p>
-              <p style={{ color: selectedChat?.online ? "#16a34a" : "#9ca3af", fontSize: "0.7rem", margin: 0, fontWeight: "600" }}>
+              <p style={{ color: isDark ? "#f8fafc" : "#111827", fontWeight: "700", fontSize: "0.9rem", margin: 0 }}>{selectedChat?.name}</p>
+              <p style={{ color: selectedChat?.online ? "#22c55e" : (isDark ? "#64748b" : "#9ca3af"), fontSize: "0.7rem", margin: 0, fontWeight: "600" }}>
                 {selectedChat?.online ? "● Online" : "● Offline"}
               </p>
             </div>
             <div style={{ display: "flex", gap: "0.5rem" }}>
               {[FiPhone, FiVideo, FiMoreVertical].map((Icon, i) => (
-                <button key={i} style={{ background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: "8px", padding: "0.45rem", color: "#4b5563", cursor: "pointer", display: "flex", alignItems: "center" }}>
+                <button key={i} style={{ background: isDark ? "#0f172a" : "#f3f4f6", border: isDark ? "1px solid #334155" : "1px solid #e5e7eb", borderRadius: "8px", padding: "0.45rem", color: isDark ? "#cbd5e1" : "#4b5563", cursor: "pointer", display: "flex", alignItems: "center" }}>
                   <Icon style={{ fontSize: "0.9rem" }} />
                 </button>
               ))}
@@ -327,11 +327,11 @@ export default function Chats() {
                   style={{ display: "flex", justifyContent: isSentByMe ? "flex-end" : "flex-start" }}>
                   <div style={{
                     maxWidth: "72%", padding: "0.6rem 0.875rem",
-                    background: isSentByMe ? "linear-gradient(135deg, #dc2626, #b91c1c)" : "#ffffff",
+                    background: isSentByMe ? "linear-gradient(135deg, #dc2626, #b91c1c)" : (isDark ? "#1e293b" : "#ffffff"),
                     borderRadius: isSentByMe ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                    color: isSentByMe ? "#ffffff" : "#111827", fontSize: "0.875rem", lineHeight: "1.5",
-                    border: isSentByMe ? "none" : "1px solid #e5e7eb",
-                    boxShadow: isSentByMe ? "0 4px 12px rgba(220,38,38,0.15)" : "0 2px 6px rgba(0,0,0,0.03)",
+                    color: isSentByMe ? "#ffffff" : (isDark ? "#f8fafc" : "#111827"), fontSize: "0.875rem", lineHeight: "1.5",
+                    border: isSentByMe ? "none" : (isDark ? "1px solid #334155" : "1px solid #e5e7eb"),
+                    boxShadow: isSentByMe ? "0 4px 12px rgba(220,38,38,0.2)" : (isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 6px rgba(0,0,0,0.03)"),
                   }}>
                     {isSnap ? (
                       <div
@@ -343,7 +343,6 @@ export default function Chats() {
                               setSnapViewer({ src: msg.text, senderName: selectedChat?.name || "Friend" });
                             }
                           } else {
-                            // Sender preview
                             setSnapViewer({ src: msg.text, senderName: "You" });
                           }
                         }}
@@ -354,7 +353,6 @@ export default function Chats() {
                         }}
                       >
                         {isSentByMe ? (
-                          /* Sent snap card */
                           <div style={{
                             display: "flex",
                             alignItems: "center",
@@ -371,26 +369,24 @@ export default function Chats() {
                             </div>
                           </div>
                         ) : isOpened ? (
-                          /* Received snap — Already Opened */
                           <div style={{
                             width: "180px",
                             height: "65px",
                             borderRadius: "12px",
-                            background: "#f3f4f6",
+                            background: isDark ? "#0f172a" : "#f3f4f6",
                             display: "flex",
                             alignItems: "center",
                             gap: "10px",
                             padding: "0 0.875rem",
-                            border: "1px solid #e5e7eb",
+                            border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
                           }}>
-                            <span style={{ fontSize: "1.2rem", color: "#9ca3af" }}>📷</span>
+                            <span style={{ fontSize: "1.2rem", color: isDark ? "#64748b" : "#9ca3af" }}>📷</span>
                             <div>
-                              <p style={{ fontSize: "0.78rem", color: "#6b7280", fontWeight: 700, margin: 0 }}>Snap Opened</p>
-                              <p style={{ fontSize: "0.62rem", color: "#9ca3af", margin: 0 }}>Expired</p>
+                              <p style={{ fontSize: "0.78rem", color: isDark ? "#94a3b8" : "#6b7280", fontWeight: 700, margin: 0 }}>Snap Opened</p>
+                              <p style={{ fontSize: "0.62rem", color: isDark ? "#64748b" : "#9ca3af", margin: 0 }}>Expired</p>
                             </div>
                           </div>
                         ) : (
-                          /* Received snap — New / Unopened */
                           <motion.div
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -417,7 +413,7 @@ export default function Chats() {
                     ) : (
                       msg.text
                     )}
-                    <div style={{ marginTop: "0.2rem", fontSize: "0.6rem", color: isSentByMe ? "rgba(255,255,255,0.6)" : "#9ca3af", textAlign: "right" }}>{formatTime(msg.createdAt)}</div>
+                    <div style={{ marginTop: "0.2rem", fontSize: "0.6rem", color: isSentByMe ? "rgba(255,255,255,0.6)" : (isDark ? "#64748b" : "#9ca3af"), textAlign: "right" }}>{formatTime(msg.createdAt)}</div>
                   </div>
                 </motion.div>
               );
@@ -426,23 +422,23 @@ export default function Chats() {
           </div>
 
           {/* Input */}
-          <form onSubmit={handleSend} style={{ padding: "0.875rem 1rem", borderTop: "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: "0.625rem", background: "#ffffff" }}>
-            <button type="button" style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center" }}><FiPaperclip /></button>
-            <button type="button" style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center" }}><FiSmile /></button>
+          <form onSubmit={handleSend} style={{ padding: "0.875rem 1rem", borderTop: isDark ? "1px solid #1e293b" : "1px solid #e5e7eb", display: "flex", alignItems: "center", gap: "0.625rem", background: isDark ? "#1e293b" : "#ffffff" }}>
+            <button type="button" style={{ background: "none", border: "none", color: isDark ? "#64748b" : "#9ca3af", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center" }}><FiPaperclip /></button>
+            <button type="button" style={{ background: "none", border: "none", color: isDark ? "#64748b" : "#9ca3af", cursor: "pointer", fontSize: "1.1rem", display: "flex", alignItems: "center" }}><FiSmile /></button>
             <input
               type="text" placeholder="Type a message..." value={message}
               onChange={e => setMessage(e.target.value)}
               style={{
                 flex: 1, padding: "0.6rem 0.875rem",
-                background: "#f3f4f6", border: "1px solid #e5e7eb",
-                borderRadius: "24px", color: "#111827", fontSize: "0.875rem", outline: "none",
+                background: isDark ? "#0f172a" : "#f3f4f6", border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
+                borderRadius: "24px", color: isDark ? "#f8fafc" : "#111827", fontSize: "0.875rem", outline: "none",
               }}
             />
             <motion.button type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
               style={{
                 padding: "0.6rem", borderRadius: "50%", border: "none",
-                background: message.trim() ? "linear-gradient(135deg,#dc2626,#b91c1c)" : "#f3f4f6",
-                color: message.trim() ? "#fff" : "#9ca3af", cursor: message.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center",
+                background: message.trim() ? "linear-gradient(135deg,#dc2626,#b91c1c)" : (isDark ? "#0f172a" : "#f3f4f6"),
+                color: message.trim() ? "#fff" : (isDark ? "#475569" : "#9ca3af"), cursor: message.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center",
                 boxShadow: message.trim() ? "0 4px 12px rgba(220,38,38,0.2)" : "none", transition: "all 0.2s ease",
               }}>
               <FiSend style={{ fontSize: "1rem" }} />
@@ -451,14 +447,14 @@ export default function Chats() {
         </div>
       ) : (
         // Empty state (desktop)
-        <div className="chat-window-empty" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#9ca3af" }}>
-          <IoChatbubblesSharp style={{ fontSize: "4rem", marginBottom: "1rem", color: "rgba(220,38,38,0.1)" }} />
-          <p style={{ fontSize: "1rem", fontWeight: "600", color: "#4b5563" }}>Select a chat to start messaging</p>
+        <div className="chat-window-empty" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: isDark ? "#64748b" : "#9ca3af" }}>
+          <IoChatbubblesSharp style={{ fontSize: "4rem", marginBottom: "1rem", color: "rgba(220,38,38,0.15)" }} />
+          <p style={{ fontSize: "1rem", fontWeight: "600", color: isDark ? "#cbd5e1" : "#4b5563" }}>Select a chat to start messaging</p>
           <p style={{ fontSize: "0.8rem", marginTop: "0.5rem" }}>Your conversations will appear here</p>
         </div>
       )}
 
-      {/* ── Fullscreen Snap Viewer Overlay ── */}
+      {/* Fullscreen Snap Viewer Overlay */}
       <AnimatePresence>
         {snapViewer && (
           <SnapViewerOverlay
@@ -470,8 +466,7 @@ export default function Chats() {
       </AnimatePresence>
 
       <style>{`
-        input::placeholder { color: #9ca3af !important; }
-        /* Mobile: hide sidebar when a chat is open */
+        input::placeholder { color: ${isDark ? '#64748b' : '#9ca3af'} !important; }
         @media(max-width: 640px) {
           .chats-sidebar {
             position: fixed !important;
@@ -495,11 +490,10 @@ export default function Chats() {
   )
 }
 
-/* ─── Snap Viewer: fullscreen overlay with 3s timer ─── */
 function SnapViewerOverlay({ src, senderName, onClose }) {
   const [progress, setProgress] = useState(100);
   const timerRef = useRef(null);
-  const DURATION = 3000; // ms
+  const DURATION = 3000;
 
   useEffect(() => {
     const start = Date.now();
@@ -532,7 +526,6 @@ function SnapViewerOverlay({ src, senderName, onClose }) {
         justifyContent: "center",
       }}
     >
-      {/* Progress bar */}
       <div style={{
         position: "absolute",
         top: 0, left: 0, right: 0,
@@ -550,7 +543,6 @@ function SnapViewerOverlay({ src, senderName, onClose }) {
         />
       </div>
 
-      {/* Top sender header */}
       <div style={{
         position: "absolute",
         top: "20px", left: "20px",
@@ -572,7 +564,6 @@ function SnapViewerOverlay({ src, senderName, onClose }) {
         </div>
       </div>
 
-      {/* Close hint */}
       <div style={{
         position: "absolute",
         top: "20px", right: "20px",
@@ -589,7 +580,6 @@ function SnapViewerOverlay({ src, senderName, onClose }) {
         Tap to close
       </div>
 
-      {/* Snap image */}
       <motion.img
         initial={{ scale: 1.04, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -605,7 +595,6 @@ function SnapViewerOverlay({ src, senderName, onClose }) {
         }}
       />
 
-      {/* Bottom watermark */}
       <div style={{
         position: "absolute",
         bottom: "20px",

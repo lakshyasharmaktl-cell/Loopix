@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaUser, FaEnvelope, FaGenderless, FaIdCard, FaCamera, FaEdit, FaCheck, FaTimes, FaUsers, FaArrowLeft } from 'react-icons/fa';
+import {
+  FaUser, FaEnvelope, FaGenderless, FaIdCard, FaCamera, FaEdit,
+  FaCheck, FaTimes, FaUsers, FaArrowLeft, FaSun, FaMoon, FaDesktop, FaPalette
+} from 'react-icons/fa';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import BASE_URL from '../../global_url.js';
+import { useTheme } from '../../context/ThemeContext.jsx';
 
 const avatarColors = ["#dc2626", "#7c3aed", "#0891b2", "#059669", "#d97706", "#db2777"];
 
 export default function Profile() {
+  const { theme, setTheme, isDark } = useTheme();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -73,7 +78,7 @@ export default function Profile() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#f9fafb"
+        background: isDark ? "#0f172a" : "#f9fafb"
       }}>
         <div style={{
           display: "inline-block",
@@ -96,9 +101,10 @@ export default function Profile() {
   return (
     <div style={{
       minHeight: "calc(100vh - 60px)",
-      background: "#f9fafb",
+      background: isDark ? "#0f172a" : "#f9fafb",
       padding: "2rem 1rem 6rem",
       fontFamily: "'Inter','Segoe UI',sans-serif",
+      transition: "background 0.3s ease"
     }}>
       <div style={{ maxWidth: "600px", margin: "0 auto" }}>
         
@@ -107,8 +113,8 @@ export default function Profile() {
           <button 
             onClick={() => window.history.back()}
             style={{
-              background: "#ffffff",
-              border: "1px solid #e5e7eb",
+              background: isDark ? "#1e293b" : "#ffffff",
+              border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
               borderRadius: "50%",
               width: "36px",
               height: "36px",
@@ -116,17 +122,15 @@ export default function Profile() {
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
-              color: "#374151",
+              boxShadow: isDark ? "0 2px 8px rgba(0,0,0,0.3)" : "0 2px 8px rgba(0,0,0,0.02)",
+              color: isDark ? "#f8fafc" : "#374151",
               fontSize: "0.85rem",
               transition: "all 0.2s"
             }}
-            onMouseOver={(e) => e.currentTarget.style.background = "#f3f4f6"}
-            onMouseOut={(e) => e.currentTarget.style.background = "#ffffff"}
           >
             <FaArrowLeft />
           </button>
-          <span style={{ fontSize: "0.9rem", fontWeight: "700", color: "#6b7280" }}>Back</span>
+          <span style={{ fontSize: "0.9rem", fontWeight: "700", color: isDark ? "#94a3b8" : "#6b7280" }}>Back</span>
         </div>
 
         {/* Profile Card */}
@@ -135,10 +139,10 @@ export default function Profile() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           style={{
-            background: "#ffffff",
-            border: "1px solid #e5e7eb",
+            background: isDark ? "#1e293b" : "#ffffff",
+            border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
             borderRadius: "20px",
-            boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
+            boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.4)" : "0 10px 30px rgba(0,0,0,0.03)",
             overflow: "hidden"
           }}
         >
@@ -175,14 +179,14 @@ export default function Profile() {
                   height: "100px",
                   borderRadius: "50%",
                   background: `linear-gradient(135deg, ${avatarBg}, ${avatarBg}88)`,
-                  border: "5px solid #ffffff",
+                  border: isDark ? "5px solid #1e293b" : "5px solid #ffffff",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: "2.2rem",
                   fontWeight: "800",
                   color: "#ffffff",
-                  boxShadow: "0 6px 16px rgba(0,0,0,0.08)"
+                  boxShadow: "0 6px 16px rgba(0,0,0,0.15)"
                 }}>
                   {avatarChar}
                 </div>
@@ -199,9 +203,9 @@ export default function Profile() {
                     gap: "8px",
                     padding: "0.5rem 1.2rem",
                     borderRadius: "10px",
-                    background: "rgba(220, 38, 38, 0.05)",
-                    border: "1px solid rgba(220, 38, 38, 0.15)",
-                    color: "#dc2626",
+                    background: isDark ? "rgba(220, 38, 38, 0.15)" : "rgba(220, 38, 38, 0.05)",
+                    border: isDark ? "1px solid rgba(220, 38, 38, 0.3)" : "1px solid rgba(220, 38, 38, 0.15)",
+                    color: "#ef4444",
                     fontWeight: "700",
                     fontSize: "0.8rem",
                     cursor: "pointer"
@@ -224,44 +228,44 @@ export default function Profile() {
                   style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
                 >
                   <div>
-                    <h2 style={{ fontSize: "1.5rem", fontWeight: "900", color: "#111827", margin: 0 }}>{user?.name}</h2>
-                    <p style={{ fontSize: "0.85rem", color: "#6b7280", marginTop: "2px" }}>{user?.email}</p>
+                    <h2 style={{ fontSize: "1.5rem", fontWeight: "900", color: isDark ? "#f8fafc" : "#111827", margin: 0 }}>{user?.name}</h2>
+                    <p style={{ fontSize: "0.85rem", color: isDark ? "#94a3b8" : "#6b7280", marginTop: "2px" }}>{user?.email}</p>
                   </div>
 
                   {/* Bio block */}
                   <div style={{
-                    background: "#f9fafb",
+                    background: isDark ? "#0f172a" : "#f9fafb",
                     padding: "1rem",
                     borderRadius: "14px",
-                    border: "1px solid #e5e7eb"
+                    border: isDark ? "1px solid #334155" : "1px solid #e5e7eb"
                   }}>
-                    <h3 style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px", color: "#9ca3af", margin: "0 0 6px" }}>Bio</h3>
-                    <p style={{ fontSize: "0.875rem", color: "#374151", margin: 0, lineHeight: 1.5, fontStyle: user?.bio ? "normal" : "italic" }}>
+                    <h3 style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "1px", color: isDark ? "#64748b" : "#9ca3af", margin: "0 0 6px" }}>Bio</h3>
+                    <p style={{ fontSize: "0.875rem", color: isDark ? "#cbd5e1" : "#374151", margin: 0, lineHeight: 1.5, fontStyle: user?.bio ? "normal" : "italic" }}>
                       {user?.bio || "No bio added yet. Tell people something about yourself!"}
                     </p>
                   </div>
 
                   {/* Extra Details Grid */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "0.25rem" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0.75rem 1rem", background: "#f3f4f6", borderRadius: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0.75rem 1rem", background: isDark ? "#0f172a" : "#f3f4f6", borderRadius: "12px", border: isDark ? "1px solid #334155" : "none" }}>
                       <FaUsers style={{ color: "#dc2626", fontSize: "1rem" }} />
                       <div>
-                        <p style={{ fontSize: "0.65rem", color: "#9ca3af", fontWeight: 700, margin: 0 }}>FRIENDS</p>
-                        <p style={{ fontSize: "0.9rem", color: "#111827", fontWeight: 800, margin: 0 }}>{user?.friends?.length || 0}</p>
+                        <p style={{ fontSize: "0.65rem", color: isDark ? "#64748b" : "#9ca3af", fontWeight: 700, margin: 0 }}>FRIENDS</p>
+                        <p style={{ fontSize: "0.9rem", color: isDark ? "#f8fafc" : "#111827", fontWeight: 800, margin: 0 }}>{user?.friends?.length || 0}</p>
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0.75rem 1rem", background: "#f3f4f6", borderRadius: "12px" }}>
-                      <FaGenderless style={{ color: "#7c3aed", fontSize: "1.1rem" }} />
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "0.75rem 1rem", background: isDark ? "#0f172a" : "#f3f4f6", borderRadius: "12px", border: isDark ? "1px solid #334155" : "none" }}>
+                      <FaGenderless style={{ color: "#a855f7", fontSize: "1.1rem" }} />
                       <div>
-                        <p style={{ fontSize: "0.65rem", color: "#9ca3af", fontWeight: 700, margin: 0 }}>GENDER</p>
-                        <p style={{ fontSize: "0.9rem", color: "#111827", fontWeight: 800, margin: 0 }}>{user?.gender || "Not specified"}</p>
+                        <p style={{ fontSize: "0.65rem", color: isDark ? "#64748b" : "#9ca3af", fontWeight: 700, margin: 0 }}>GENDER</p>
+                        <p style={{ fontSize: "0.9rem", color: isDark ? "#f8fafc" : "#111827", fontWeight: 800, margin: 0 }}>{user?.gender || "Not specified"}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Joining details */}
-                  <div style={{ borderTop: "1px solid #f3f4f6", paddingTop: "1.25rem", display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: "#9ca3af", fontWeight: 600 }}>
+                  <div style={{ borderTop: isDark ? "1px solid #334155" : "1px solid #f3f4f6", paddingTop: "1.25rem", display: "flex", justifyContent: "space-between", fontSize: "0.7rem", color: isDark ? "#64748b" : "#9ca3af", fontWeight: 600 }}>
                     <span>Account Verified: {user?.user?.isVerify ? "Yes ✓" : "No"}</span>
                     <span>Joined: {user?.createdAt ? new Date(user.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</span>
                   </div>
@@ -276,11 +280,11 @@ export default function Profile() {
                   exit={{ opacity: 0 }}
                   style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}
                 >
-                  <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827", margin: 0 }}>Edit Your Info</h3>
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: isDark ? "#f8fafc" : "#111827", margin: 0 }}>Edit Your Info</h3>
                   
                   {/* Name field */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                    <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#4b5563" }}>Full Name</label>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#cbd5e1" : "#4b5563" }}>Full Name</label>
                     <input
                       type="text"
                       required
@@ -288,10 +292,11 @@ export default function Profile() {
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       style={{
                         padding: "0.65rem 1rem",
-                        border: "1px solid #d1d5db",
+                        border: isDark ? "1px solid #475569" : "1px solid #d1d5db",
+                        background: isDark ? "#0f172a" : "#ffffff",
                         borderRadius: "10px",
                         fontSize: "0.85rem",
-                        color: "#111827",
+                        color: isDark ? "#f8fafc" : "#111827",
                         outline: "none"
                       }}
                     />
@@ -299,17 +304,17 @@ export default function Profile() {
 
                   {/* Gender Select */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                    <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#4b5563" }}>Gender</label>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#cbd5e1" : "#4b5563" }}>Gender</label>
                     <select
                       value={formData.gender}
                       onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                       style={{
                         padding: "0.65rem 1rem",
-                        border: "1px solid #d1d5db",
+                        border: isDark ? "1px solid #475569" : "1px solid #d1d5db",
                         borderRadius: "10px",
                         fontSize: "0.85rem",
-                        color: "#111827",
-                        background: "#fff",
+                        color: isDark ? "#f8fafc" : "#111827",
+                        background: isDark ? "#0f172a" : "#fff",
                         outline: "none"
                       }}
                     >
@@ -321,7 +326,7 @@ export default function Profile() {
 
                   {/* Bio textarea */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                    <label style={{ fontSize: "0.75rem", fontWeight: 700, color: "#4b5563" }}>Bio</label>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 700, color: isDark ? "#cbd5e1" : "#4b5563" }}>Bio</label>
                     <textarea
                       rows={4}
                       placeholder="Tell us about yourself..."
@@ -329,10 +334,11 @@ export default function Profile() {
                       onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                       style={{
                         padding: "0.65rem 1rem",
-                        border: "1px solid #d1d5db",
+                        border: isDark ? "1px solid #475569" : "1px solid #d1d5db",
+                        background: isDark ? "#0f172a" : "#ffffff",
                         borderRadius: "10px",
                         fontSize: "0.85rem",
-                        color: "#111827",
+                        color: isDark ? "#f8fafc" : "#111827",
                         outline: "none",
                         resize: "none"
                       }}
@@ -380,10 +386,10 @@ export default function Profile() {
                       style={{
                         flex: 1,
                         padding: "0.7rem 1.5rem",
-                        border: "1px solid #e5e7eb",
+                        border: isDark ? "1px solid #475569" : "1px solid #e5e7eb",
                         borderRadius: "10px",
-                        background: "#f9fafb",
-                        color: "#4b5563",
+                        background: isDark ? "#0f172a" : "#f9fafb",
+                        color: isDark ? "#cbd5e1" : "#4b5563",
                         fontWeight: "700",
                         fontSize: "0.825rem",
                         cursor: "pointer",
@@ -401,6 +407,124 @@ export default function Profile() {
             </AnimatePresence>
           </div>
         </motion.div>
+
+        {/* Theme Settings Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+          style={{
+            marginTop: "1.5rem",
+            background: isDark ? "#1e293b" : "#ffffff",
+            border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
+            borderRadius: "20px",
+            padding: "1.5rem",
+            boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.4)" : "0 10px 30px rgba(0,0,0,0.03)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "1rem" }}>
+            <div style={{
+              width: "36px", height: "36px", borderRadius: "10px",
+              background: isDark ? "rgba(220, 38, 38, 0.2)" : "rgba(220, 38, 38, 0.1)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#dc2626", fontSize: "1rem"
+            }}>
+              <FaPalette />
+            </div>
+            <div>
+              <h3 style={{ fontSize: "1rem", fontWeight: 800, color: isDark ? "#f8fafc" : "#111827", margin: 0 }}>
+                Appearance & Theme Mode
+              </h3>
+              <p style={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#6b7280", margin: 0 }}>
+                Customize your Loopix interface experience
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px", marginTop: "1rem" }}>
+            {/* Light Mode Option */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setTheme('light')}
+              style={{
+                padding: "1rem 0.5rem",
+                borderRadius: "14px",
+                border: theme === 'light' ? "2px solid #dc2626" : (isDark ? "1px solid #334155" : "1px solid #e5e7eb"),
+                background: theme === 'light'
+                  ? (isDark ? "rgba(220, 38, 38, 0.15)" : "#fff5f5")
+                  : (isDark ? "#0f172a" : "#f9fafb"),
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "8px",
+                textAlign: "center",
+                transition: "all 0.2s"
+              }}
+            >
+              <FaSun style={{ fontSize: "1.4rem", color: theme === 'light' ? "#dc2626" : "#eab308" }} />
+              <span style={{ fontSize: "0.8rem", fontWeight: 700, color: theme === 'light' ? "#dc2626" : (isDark ? "#cbd5e1" : "#374151") }}>
+                Light
+              </span>
+            </motion.div>
+
+            {/* Dark Mode Option */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setTheme('dark')}
+              style={{
+                padding: "1rem 0.5rem",
+                borderRadius: "14px",
+                border: theme === 'dark' ? "2px solid #dc2626" : (isDark ? "1px solid #334155" : "1px solid #e5e7eb"),
+                background: theme === 'dark'
+                  ? (isDark ? "rgba(220, 38, 38, 0.2)" : "#fff5f5")
+                  : (isDark ? "#0f172a" : "#f9fafb"),
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "8px",
+                textAlign: "center",
+                transition: "all 0.2s"
+              }}
+            >
+              <FaMoon style={{ fontSize: "1.4rem", color: theme === 'dark' ? "#dc2626" : "#818cf8" }} />
+              <span style={{ fontSize: "0.8rem", fontWeight: 700, color: theme === 'dark' ? "#dc2626" : (isDark ? "#cbd5e1" : "#374151") }}>
+                Dark
+              </span>
+            </motion.div>
+
+            {/* System Default Option */}
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setTheme('system')}
+              style={{
+                padding: "1rem 0.5rem",
+                borderRadius: "14px",
+                border: theme === 'system' ? "2px solid #dc2626" : (isDark ? "1px solid #334155" : "1px solid #e5e7eb"),
+                background: theme === 'system'
+                  ? (isDark ? "rgba(220, 38, 38, 0.2)" : "#fff5f5")
+                  : (isDark ? "#0f172a" : "#f9fafb"),
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "8px",
+                textAlign: "center",
+                transition: "all 0.2s"
+              }}
+            >
+              <FaDesktop style={{ fontSize: "1.4rem", color: theme === 'system' ? "#dc2626" : "#6b7280" }} />
+              <span style={{ fontSize: "0.8rem", fontWeight: 700, color: theme === 'system' ? "#dc2626" : (isDark ? "#cbd5e1" : "#374151") }}>
+                System
+              </span>
+            </motion.div>
+          </div>
+        </motion.div>
+
       </div>
     </div>
   );
