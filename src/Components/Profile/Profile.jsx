@@ -55,6 +55,7 @@ export default function Profile() {
         const storedUser = JSON.parse(localStorage.getItem('loopix_user')) || {};
         const newUser = { ...storedUser, name: res.data.user.name, gender: res.data.user.gender, profileImg: res.data.user.profileImg };
         localStorage.setItem('loopix_user', JSON.stringify(newUser));
+        window.dispatchEvent(new Event('loopix-auth-change'));
         setIsEditing(false);
       }
     } catch (err) {

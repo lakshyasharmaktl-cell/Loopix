@@ -13,7 +13,31 @@ import {
   FaTimes,
   FaPaperPlane,
   FaSearch,
+  FaFire,
 } from "react-icons/fa";
+
+/* ─── streak helpers (localStorage) ─── */
+const STREAK_KEY = "loopix_streaks";
+function _today() { return new Date().toISOString().slice(0, 10); }
+function _dayDiff(d) { return Math.round((new Date(_today()) - new Date(d)) / 86400000); }
+function _loadStreaks() { try { return JSON.parse(localStorage.getItem(STREAK_KEY)) || {}; } catch { return {}; } }
+function getStreak(fId) {
+  const e = _loadStreaks()[fId];
+  if (!e) return 0;
+  return _dayDiff(e.lastDate) <= 1 ? (e.count || 0) : 0;
+}
+function updateStreak(fId) {
+  const all = _loadStreaks(), today = _today(), e = all[fId];
+  if (!e) all[fId] = { count: 1, lastDate: today };
+  else {
+    const d = _dayDiff(e.lastDate);
+    if (d === 0) { /* already snapped */ }
+    else if (d === 1) all[fId] = { count: (e.count || 1) + 1, lastDate: today };
+    else all[fId] = { count: 1, lastDate: today };
+  }
+  localStorage.setItem(STREAK_KEY, JSON.stringify(all));
+}
+
 
 /* ─── filter presets (CSS filter strings) ─── */
 const FILTERS = [
@@ -53,7 +77,8 @@ export default function Snap() {
   const [friendsLoading, setFriendsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sendingSnap, setSendingSnap] = useState(false);
-  const [selectedFriend, setSelectedFriend] = useState(null);
+  const [selectedFriends, setSelectedFriends] = useState([]); // multi-select
+
 
   const [user] = useState(() => JSON.parse(localStorage.getItem("loopix_user")) || null);
 
@@ -208,11 +233,10 @@ export default function Snap() {
   };
 
   const sendSnap = async () => {
-    if (!selectedFriend || !capturedImage || !user) return;
+    if (!selectedFriends.length || !capturedImage || !user) return;
     setSendingSnap(true);
 
     try {
-      /* Re-render the image with the current filter applied before sending */
       const img = new Image();
       img.onload = () => {
         const c = document.createElement("canvas");
@@ -222,35 +246,40 @@ export default function Snap() {
         const filterObj = FILTERS.find((f) => f.name === activeFilter);
         ctx.filter = filterObj ? filterObj.css : "none";
         ctx.drawImage(img, 0, 0);
-
         const filteredBase64 = c.toDataURL("image/png");
 
-        // Send via socket.io
+        // Send to each selected friend
         const socket = io(BASE_URL);
         socket.emit("join_room", user.id);
-        socket.emit("send_message", {
-          senderId: user.id,
-          receiverId: selectedFriend,
-          text: filteredBase64
+
+        selectedFriends.forEach((receiverId) => {
+          socket.emit("send_message", {
+            senderId: user.id,
+            receiverId,
+            text: filteredBase64,
+          });
+          // Update streak for each friend
+          updateStreak(receiverId);
         });
 
-        // Small delay to let socket deliver and disconnect
         setTimeout(() => {
           socket.disconnect();
-          toast.success("Snap sent successfully! ✉️");
+          const count = selectedFriends.length;
+          toast.success(`Snap sent to ${count} friend${count > 1 ? "s" : ""}! 🔥`);
           setSendingSnap(false);
           setShowSendModal(false);
+          setSelectedFriends([]);
           navigate("/chats");
         }, 1000);
       };
       img.src = capturedImage;
-
     } catch (err) {
       console.error(err);
       toast.error("Error sending snap");
       setSendingSnap(false);
     }
   };
+
 
   /* ─────────────────────── styles ─────────────────────── */
   const font = "'Inter','Segoe UI',sans-serif";
@@ -873,9 +902,16 @@ export default function Snap() {
                 alignItems: "center",
                 justifyContent: "space-between"
               }}>
-                <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827", margin: 0 }}>Send Snap</h3>
+                <div>
+                  <h3 style={{ fontSize: "1.1rem", fontWeight: 800, color: "#111827", margin: 0 }}>Send Snap</h3>
+                  {selectedFriends.length > 0 && (
+                    <p style={{ fontSize: "0.72rem", color: "#dc2626", fontWeight: 700, margin: "2px 0 0" }}>
+                      {selectedFriends.length} friend{selectedFriends.length > 1 ? "s" : ""} selected
+                    </p>
+                  )}
+                </div>
                 <button
-                  onClick={() => setShowSendModal(false)}
+                  onClick={() => { setShowSendModal(false); setSelectedFriends([]); }}
                   style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "1rem" }}
                 >
                   <FaTimes />
@@ -914,23 +950,28 @@ export default function Snap() {
                   </div>
                 ) : (
                   friends.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase())).map((f, i) => {
-                    const isSelected = selectedFriend === f.id;
+                    const isSelected = selectedFriends.includes(f.id);
+                    const streak = getStreak(f.id);
                     return (
                       <div
                         key={f.id}
-                        onClick={() => setSelectedFriend(isSelected ? null : f.id)}
+                        onClick={() => setSelectedFriends(prev =>
+                          isSelected ? prev.filter(id => id !== f.id) : [...prev, f.id]
+                        )}
                         style={{
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
                           padding: "0.6rem 0.8rem",
                           borderRadius: "12px",
-                          background: isSelected ? "rgba(220, 38, 38, 0.05)" : "transparent",
+                          background: isSelected ? "rgba(220, 38, 38, 0.07)" : "transparent",
+                          border: isSelected ? "1px solid rgba(220,38,38,0.2)" : "1px solid transparent",
                           cursor: "pointer",
                           marginBottom: "2px",
                           transition: "all 0.15s ease",
                         }}
                       >
+                        {/* Avatar */}
                         <div style={{
                           width: "36px",
                           height: "36px",
@@ -942,21 +983,37 @@ export default function Snap() {
                           color: "#fff",
                           fontWeight: "800",
                           fontSize: "0.85rem",
+                          flexShrink: 0,
                         }}>
                           {f.avatar}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <p style={{ fontSize: "0.8rem", fontWeight: "700", color: "#111827", margin: 0 }}>{f.name}</p>
+                        {/* Name + streak */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <p style={{ fontSize: "0.8rem", fontWeight: "700", color: "#111827", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.name}</p>
+                            {streak > 0 && (
+                              <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "0.68rem", fontWeight: "800", color: "#f97316" }}>
+                                <FaFire style={{ fontSize: "0.65rem" }} />{streak}
+                              </span>
+                            )}
+                          </div>
                           <p style={{ fontSize: "0.7rem", color: "#6b7280", margin: 0 }}>{f.email}</p>
                         </div>
+                        {/* Checkbox */}
                         <div style={{
-                          width: "18px",
-                          height: "18px",
+                          width: "20px",
+                          height: "20px",
                           borderRadius: "50%",
-                          border: isSelected ? "5px solid #dc2626" : "2px solid #d1d5db",
-                          background: "#fff",
-                          transition: "all 0.1s ease",
-                        }} />
+                          border: isSelected ? "none" : "2px solid #d1d5db",
+                          background: isSelected ? "linear-gradient(135deg,#dc2626,#b91c1c)" : "#fff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                          transition: "all 0.15s ease",
+                        }}>
+                          {isSelected && <span style={{ color: "#fff", fontSize: "0.55rem", fontWeight: 900 }}>✓</span>}
+                        </div>
                       </div>
                     );
                   })
@@ -966,25 +1023,25 @@ export default function Snap() {
               {/* Send action footer */}
               <div style={{ padding: "1rem", borderTop: "1px solid #f3f4f6" }}>
                 <motion.button
-                  whileHover={{ scale: selectedFriend ? 1.02 : 1 }}
-                  whileTap={{ scale: selectedFriend ? 0.98 : 1 }}
+                  whileHover={{ scale: selectedFriends.length ? 1.02 : 1 }}
+                  whileTap={{ scale: selectedFriends.length ? 0.98 : 1 }}
                   onClick={sendSnap}
-                  disabled={!selectedFriend || sendingSnap}
+                  disabled={!selectedFriends.length || sendingSnap}
                   style={{
                     width: "100%",
                     padding: "0.75rem",
                     borderRadius: "12px",
                     border: "none",
-                    background: selectedFriend ? "linear-gradient(135deg,#dc2626,#b91c1c)" : "#f3f4f6",
-                    color: selectedFriend ? "#fff" : "#9ca3af",
+                    background: selectedFriends.length ? "linear-gradient(135deg,#dc2626,#b91c1c)" : "#f3f4f6",
+                    color: selectedFriends.length ? "#fff" : "#9ca3af",
                     fontSize: "0.85rem",
                     fontWeight: "700",
-                    cursor: selectedFriend ? "pointer" : "default",
+                    cursor: selectedFriends.length ? "pointer" : "default",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     gap: "8px",
-                    boxShadow: selectedFriend ? "0 4px 12px rgba(220,38,38,0.2)" : "none",
+                    boxShadow: selectedFriends.length ? "0 4px 12px rgba(220,38,38,0.2)" : "none",
                   }}
                 >
                   {sendingSnap ? (
@@ -992,7 +1049,9 @@ export default function Snap() {
                   ) : (
                     <FaPaperPlane style={{ fontSize: "0.8rem" }} />
                   )}
-                  Send Snap
+                  {selectedFriends.length > 0
+                    ? `Send to ${selectedFriends.length} Friend${selectedFriends.length > 1 ? "s" : ""}`
+                    : "Select Friends"}
                 </motion.button>
               </div>
             </motion.div>

@@ -93,32 +93,99 @@ export default function OtpSection() {
     }
     setLoading(true); setError(''); setSuccess('');
     try {
-      const res = await axios.post(`${BASE_URL}/verify-otp/${id}`, { otp: otpValue });
-      if (!res.data.status) throw new Error(res.data.msg);
+      const targetEmail = email || localStorage.getItem('otp_email');
+      const targetId = id && id !== "undefined" ? id : "verify";
+
+      let res = null;
+      let lastErr = null;
+
+      // Route 1: POST /verify-otp/:id
+      try {
+        res = await axios.post(`${BASE_URL}/verify-otp/${targetId}`, {
+          otp: otpValue,
+          email: targetEmail,
+          id: targetId
+        }, { timeout: 12000 });
+      } catch (e1) {
+        lastErr = e1;
+        // Route 2: POST /verify-otp
+        try {
+          res = await axios.post(`${BASE_URL}/verify-otp`, {
+            otp: otpValue,
+            email: targetEmail,
+            id: targetId,
+            userId: targetId
+          }, { timeout: 12000 });
+        } catch (e2) {
+          lastErr = e2;
+          // Route 3: POST /otp-verify
+          try {
+            res = await axios.post(`${BASE_URL}/otp-verify`, {
+              otp: otpValue,
+              email: targetEmail,
+              id: targetId
+            }, { timeout: 12000 });
+          } catch (e3) {
+            lastErr = e3;
+          }
+        }
+      }
+
+      if (!res && lastErr) {
+        throw lastErr;
+      }
+
+      if (!res?.data || res.data.status === false) {
+        throw new Error(res?.data?.msg || 'Invalid verification code. Please check and try again.');
+      }
+
       localStorage.removeItem('otp_email');
-      setSuccess('Account verified! Redirecting...');
+      localStorage.removeItem('temp_otp');
+      setSuccess('Account verified! Redirecting to login...');
       toast.success('Account verified successfully! 🎉');
-      setTimeout(() => navigate('/login'), 1500);
+      setTimeout(() => navigate('/login'), 1200);
     } catch (err) {
-      const msg = err.response?.data?.msg || err.message || 'Something went wrong.';
-      setError(msg); toast.error(msg);
-    } finally { setLoading(false); }
+      console.error("OTP verification error:", err);
+      const msg = err.response?.data?.msg || err.message || 'Verification failed. Please check the code and try again.';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleResendOtp = async () => {
-    if (!canResend && timeLeft > 0) { setError(`Wait ${formatTime(timeLeft)} before resending`); return; }
+    if (!canResend && timeLeft > 0) {
+      setError(`Wait ${formatTime(timeLeft)} before resending`);
+      return;
+    }
+    const targetEmail = email || localStorage.getItem('otp_email');
+    if (!targetEmail) {
+      toast.error("Email not found. Please register again.");
+      navigate('/signup');
+      return;
+    }
+
     setLoading(true); setError(''); setSuccess('');
     try {
-      await axios.post(`${BASE_URL}/register`, { email });
-      setTimeLeft(300); setCanResend(false);
+      const res = await axios.post(`${BASE_URL}/resend-otp`, { email: targetEmail }, { timeout: 15000 }).catch(() => {
+        // Fallback to register if resend-otp endpoint is not implemented
+        return axios.post(`${BASE_URL}/register`, { email: targetEmail }, { timeout: 15000 });
+      });
+
+      setTimeLeft(300);
+      setCanResend(false);
       setOtp(['', '', '', '']);
       setSuccess('New code sent! Check your email.');
-      toast.success('OTP resent 📧');
+      toast.success('OTP resent to your email 📧');
       inputRefs.current[0]?.focus();
     } catch (err) {
-      const msg = err.response?.data?.msg || 'Failed to resend.';
-      setError(msg); toast.error(msg);
-    } finally { setLoading(false); }
+      const msg = err.response?.data?.msg || 'Failed to resend code. Please try again.';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const allFilled = otp.every(d => d !== '');
@@ -174,7 +241,7 @@ export default function OtpSection() {
           {/* Email pill */}
           {email && (
             <div style={{
-              marginBottom: '1.25rem', padding: '0.625rem 0.875rem',
+              marginBottom: '0.75rem', padding: '0.625rem 0.875rem',
               background: '#eff6ff', border: '1px solid #bfdbfe',
               borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '0.5rem',
             }}>
@@ -182,6 +249,33 @@ export default function OtpSection() {
               <span style={{ fontSize: '0.78rem', color: '#1d4ed8', fontWeight: '500' }}>
                 Code sent to <strong>{email}</strong>
               </span>
+            </div>
+          )}
+
+          {/* Quick OTP Autofill helper if server returned OTP or for email delay */}
+          {localStorage.getItem('temp_otp') && (
+            <div style={{
+              marginBottom: '1.25rem', padding: '0.5rem 0.75rem',
+              background: '#fff7ed', border: '1px solid #ffedd5',
+              borderRadius: '10px', textAlign: 'center'
+            }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const code = localStorage.getItem('temp_otp') || '';
+                  if (code.length === 4) {
+                    setOtp(code.split(''));
+                    toast.info("Filled verification code! 🎉");
+                  }
+                }}
+                style={{
+                  background: 'none', border: 'none', color: '#ea580c',
+                  fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+              >
+                Tap here to auto-fill OTP code ({localStorage.getItem('temp_otp')})
+              </button>
             </div>
           )}
 

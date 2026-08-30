@@ -39,13 +39,35 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${BASE_URL}/register`, formData);
-      toast.success(response?.data?.msg || "OTP sent to your email");
-      navigate(`/otp-verify/${response?.data?.id}`, {
-        state: { email: response?.data?.email }
+      const response = await axios.post(`${BASE_URL}/register`, formData, {
+        timeout: 20000 // 20s timeout so button doesn't freeze in loading mode
+      });
+      const data = response?.data;
+
+      if (data && data.status === false) {
+        toast.error(data.msg || "Registration failed. Please try again.");
+        return;
+      }
+
+      const targetEmail = formData.email;
+      localStorage.setItem('otp_email', targetEmail);
+      if (data?.otp || data?.code) {
+        localStorage.setItem('temp_otp', String(data.otp || data.code));
+      }
+
+      toast.success(data?.msg || "OTP code sent to your email!");
+
+      const targetId = data?.id || data?.userId || data?.user?._id || data?.user?.id || "verify";
+      navigate(`/otp-verify/${targetId}`, {
+        state: { email: targetEmail }
       });
     } catch (err) {
-      toast.error(err.response?.data?.msg || "Server error. Try again.");
+      console.error("Signup submission error:", err);
+      if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+        toast.error("Server is taking longer to respond. Please try again in a moment.");
+      } else {
+        toast.error(err.response?.data?.msg || err.message || "Server error. Try again.");
+      }
     } finally {
       setLoading(false);
     }

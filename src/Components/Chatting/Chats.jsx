@@ -1,10 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { FiSearch, FiSend, FiMoreVertical, FiPhone, FiVideo, FiSmile, FiPaperclip } from 'react-icons/fi'
 import { IoChatbubblesSharp } from 'react-icons/io5'
+import { FaFire } from 'react-icons/fa'
 import { io } from 'socket.io-client'
 import axios from 'axios'
 import BASE_URL from '../../global_url.js'
+
+/* ─── streak helpers ─── */
+const STREAK_KEY = "loopix_streaks";
+function _today() { return new Date().toISOString().slice(0, 10); }
+function _dayDiff(d) { return Math.round((new Date(_today()) - new Date(d)) / 86400000); }
+function _loadStreaks() { try { return JSON.parse(localStorage.getItem(STREAK_KEY)) || {}; } catch { return {}; } }
+function getStreak(fId) {
+  const e = _loadStreaks()[fId];
+  if (!e) return 0;
+  return _dayDiff(e.lastDate) <= 1 ? (e.count || 0) : 0;
+}
+function updateStreak(fId) {
+  const all = _loadStreaks(), today = _today(), e = all[fId];
+  if (!e) all[fId] = { count: 1, lastDate: today };
+  else {
+    const d = _dayDiff(e.lastDate);
+    if (d === 0) { /* already counted */ }
+    else if (d === 1) all[fId] = { count: (e.count || 1) + 1, lastDate: today };
+    else all[fId] = { count: 1, lastDate: today };
+  }
+  localStorage.setItem(STREAK_KEY, JSON.stringify(all));
+}
+
 
 const avatarColors = ["#dc2626", "#7c3aed", "#0891b2", "#059669", "#d97706", "#db2777"]
 
@@ -15,6 +39,27 @@ export default function Chats() {
   const [chatList, setChatList] = useState([])
   const [messages, setMessages] = useState([])
   const [user] = useState(() => JSON.parse(localStorage.getItem('loopix_user')) || null)
+  // Snap viewer overlay: { src, senderName }
+  const [snapViewer, setSnapViewer] = useState(null)
+
+  // Track opened snaps in localStorage
+  const [openedSnaps, setOpenedSnaps] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('loopix_opened_snaps')) || [];
+    } catch {
+      return [];
+    }
+  });
+
+  const markSnapAsOpened = (msgId) => {
+    if (!msgId) return;
+    setOpenedSnaps(prev => {
+      if (prev.includes(msgId)) return prev;
+      const updated = [...prev, msgId];
+      localStorage.setItem('loopix_opened_snaps', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const socketRef = useRef(null)
   const selectedChatRef = useRef(null)
@@ -142,7 +187,7 @@ export default function Chats() {
         flexDirection: "column",
         overflow: "hidden",
         flexShrink: 0,
-      }} className="chats-sidebar">
+      }} className={`chats-sidebar${selected ? " hidden" : ""}`}>
         {/* Header */}
         <div style={{ padding: "1.25rem 1rem 0.75rem", borderBottom: "1px solid #e5e7eb" }}>
           <h2 style={{ color: "#111827", fontSize: "1.25rem", fontWeight: "800", marginBottom: "0.875rem", letterSpacing: "0.5px" }}>
@@ -209,7 +254,14 @@ export default function Chats() {
               {/* Info */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.2rem" }}>
-                  <span style={{ color: "#111827", fontWeight: "700", fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{chat.name}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px", minWidth: 0 }}>
+                    <span style={{ color: "#111827", fontWeight: "700", fontSize: "0.875rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{chat.name}</span>
+                    {getStreak(chat.id) > 0 && (
+                      <span style={{ display: "flex", alignItems: "center", gap: "2px", fontSize: "0.68rem", fontWeight: "800", color: "#f97316", flexShrink: 0 }}>
+                        <FaFire style={{ fontSize: "0.6rem" }} />{getStreak(chat.id)}
+                      </span>
+                    )}
+                  </div>
                   <span style={{ color: "#9ca3af", fontSize: "0.7rem", flexShrink: 0, marginLeft: "0.5rem" }}>{chat.time}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -264,7 +316,12 @@ export default function Chats() {
           {/* Messages */}
           <div style={{ flex: 1, overflowY: "auto", padding: "1.25rem 1rem", display: "flex", flexDirection: "column", gap: "0.625rem" }}>
             {messages.map((msg, i) => {
-              const isSentByMe = msg.sender === user?.id;
+              const myId = user?.id || user?._id;
+              const senderId = typeof msg.sender === 'object' ? (msg.sender?._id || msg.sender?.id) : msg.sender;
+              const isSentByMe = String(senderId) === String(myId);
+              const isSnap = msg.text?.startsWith('data:image/') || msg.text?.startsWith('http://') || msg.text?.startsWith('https://');
+              const isOpened = isSnap && openedSnaps.includes(msg._id);
+
               return (
                 <motion.div key={msg._id || i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
                   style={{ display: "flex", justifyContent: isSentByMe ? "flex-end" : "flex-start" }}>
@@ -276,11 +333,87 @@ export default function Chats() {
                     border: isSentByMe ? "none" : "1px solid #e5e7eb",
                     boxShadow: isSentByMe ? "0 4px 12px rgba(220,38,38,0.15)" : "0 2px 6px rgba(0,0,0,0.03)",
                   }}>
-                    {msg.text?.startsWith('data:image/') ? (
-                      <img src={msg.text} alt="Shared Snap" style={{ maxWidth: "200px", borderRadius: "10px", display: "block", cursor: "pointer", border: isSentByMe ? "2px solid rgba(255,255,255,0.4)" : "1px solid #e5e7eb" }} onClick={() => {
-                        const w = window.open();
-                        w.document.write(`<iframe src="${msg.text}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
-                      }} />
+                    {isSnap ? (
+                      <div
+                        onClick={() => {
+                          if (!isSentByMe) {
+                            if (!isOpened) {
+                              markSnapAsOpened(msg._id);
+                              updateStreak(selected);
+                              setSnapViewer({ src: msg.text, senderName: selectedChat?.name || "Friend" });
+                            }
+                          } else {
+                            // Sender preview
+                            setSnapViewer({ src: msg.text, senderName: "You" });
+                          }
+                        }}
+                        style={{
+                          position: "relative",
+                          cursor: (isSentByMe || !isOpened) ? "pointer" : "default",
+                          maxWidth: "200px",
+                        }}
+                      >
+                        {isSentByMe ? (
+                          /* Sent snap card */
+                          <div style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            padding: "0.5rem 0.75rem",
+                            borderRadius: "12px",
+                            background: "rgba(255,255,255,0.15)",
+                            color: "#ffffff"
+                          }}>
+                            <span style={{ fontSize: "1.2rem" }}>📷</span>
+                            <div>
+                              <p style={{ fontSize: "0.78rem", fontWeight: 700, margin: 0 }}>Snap Sent</p>
+                              <p style={{ fontSize: "0.62rem", opacity: 0.8, margin: 0 }}>Tap to preview</p>
+                            </div>
+                          </div>
+                        ) : isOpened ? (
+                          /* Received snap — Already Opened */
+                          <div style={{
+                            width: "180px",
+                            height: "65px",
+                            borderRadius: "12px",
+                            background: "#f3f4f6",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "0 0.875rem",
+                            border: "1px solid #e5e7eb",
+                          }}>
+                            <span style={{ fontSize: "1.2rem", color: "#9ca3af" }}>📷</span>
+                            <div>
+                              <p style={{ fontSize: "0.78rem", color: "#6b7280", fontWeight: 700, margin: 0 }}>Snap Opened</p>
+                              <p style={{ fontSize: "0.62rem", color: "#9ca3af", margin: 0 }}>Expired</p>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Received snap — New / Unopened */
+                          <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            style={{
+                              width: "180px",
+                              height: "90px",
+                              borderRadius: "14px",
+                              background: "linear-gradient(135deg,#dc2626,#991b1b)",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              gap: "4px",
+                              color: "#fff",
+                              boxShadow: "0 6px 20px rgba(220,38,38,0.3)",
+                            }}
+                          >
+                            <span style={{ fontSize: "1.5rem" }}>📷</span>
+                            <span style={{ fontSize: "0.8rem", fontWeight: 800 }}>New Snap</span>
+                            <span style={{ fontSize: "0.62rem", opacity: 0.9 }}>Tap to open • 3s timer</span>
+                          </motion.div>
+                        )}
+                      </div>
                     ) : (
                       msg.text
                     )}
@@ -325,14 +458,167 @@ export default function Chats() {
         </div>
       )}
 
+      {/* ── Fullscreen Snap Viewer Overlay ── */}
+      <AnimatePresence>
+        {snapViewer && (
+          <SnapViewerOverlay
+            src={snapViewer.src}
+            senderName={snapViewer.senderName}
+            onClose={() => setSnapViewer(null)}
+          />
+        )}
+      </AnimatePresence>
+
       <style>{`
         input::placeholder { color: #9ca3af !important; }
+        /* Mobile: hide sidebar when a chat is open */
         @media(max-width: 640px) {
-          .chats-sidebar { max-width: 100% !important; width: 100% !important; }
+          .chats-sidebar {
+            position: fixed !important;
+            top: 60px; left: 0; right: 0; bottom: 0;
+            z-index: 5;
+            max-width: 100% !important;
+            width: 100% !important;
+            display: flex;
+          }
+          .chats-sidebar.hidden { display: none !important; }
           .back-btn-chat { display: flex !important; }
           .chat-window-empty { display: none !important; }
+          .chat-window-mobile { display: flex !important; }
+        }
+        @media(min-width: 641px) {
+          .chats-sidebar { position: static !important; display: flex !important; }
+          .chat-window-mobile { display: flex !important; }
         }
       `}</style>
     </div>
   )
+}
+
+/* ─── Snap Viewer: fullscreen overlay with 3s timer ─── */
+function SnapViewerOverlay({ src, senderName, onClose }) {
+  const [progress, setProgress] = useState(100);
+  const timerRef = useRef(null);
+  const DURATION = 3000; // ms
+
+  useEffect(() => {
+    const start = Date.now();
+    timerRef.current = setInterval(() => {
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, 100 - (elapsed / DURATION) * 100);
+      setProgress(remaining);
+      if (remaining === 0) {
+        clearInterval(timerRef.current);
+        onClose();
+      }
+    }, 50);
+    return () => clearInterval(timerRef.current);
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        background: "#000",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {/* Progress bar */}
+      <div style={{
+        position: "absolute",
+        top: 0, left: 0, right: 0,
+        height: "4px",
+        background: "rgba(255,255,255,0.15)",
+        zIndex: 10,
+      }}>
+        <motion.div
+          style={{
+            height: "100%",
+            width: `${progress}%`,
+            background: "linear-gradient(90deg,#dc2626,#f97316)",
+            transition: "width 0.05s linear",
+          }}
+        />
+      </div>
+
+      {/* Top sender header */}
+      <div style={{
+        position: "absolute",
+        top: "20px", left: "20px",
+        display: "flex", alignItems: "center", gap: "10px",
+        color: "#ffffff", zIndex: 10,
+      }}>
+        <div style={{
+          width: "34px", height: "34px", borderRadius: "50%",
+          background: "linear-gradient(135deg,#dc2626,#991b1b)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontWeight: 800, fontSize: "0.85rem", color: "#fff",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.4)"
+        }}>
+          {(senderName || "S").charAt(0).toUpperCase()}
+        </div>
+        <div>
+          <p style={{ fontSize: "0.9rem", fontWeight: 800, margin: 0, color: "#ffffff" }}>{senderName || "Snap"}</p>
+          <p style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.7)", margin: 0 }}>Snapchat Story Mode</p>
+        </div>
+      </div>
+
+      {/* Close hint */}
+      <div style={{
+        position: "absolute",
+        top: "20px", right: "20px",
+        color: "rgba(255,255,255,0.7)",
+        fontSize: "0.75rem",
+        fontWeight: 600,
+        letterSpacing: "0.5px",
+        fontFamily: "'Inter',sans-serif",
+        zIndex: 10,
+        background: "rgba(0,0,0,0.4)",
+        padding: "4px 10px",
+        borderRadius: "20px"
+      }}>
+        Tap to close
+      </div>
+
+      {/* Snap image */}
+      <motion.img
+        initial={{ scale: 1.04, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.25 }}
+        src={src}
+        alt="Snap"
+        style={{
+          maxWidth: "100%",
+          maxHeight: "100vh",
+          objectFit: "contain",
+          pointerEvents: "none",
+          userSelect: "none",
+        }}
+      />
+
+      {/* Bottom watermark */}
+      <div style={{
+        position: "absolute",
+        bottom: "20px",
+        left: 0, right: 0,
+        textAlign: "center",
+        color: "rgba(255,255,255,0.35)",
+        fontSize: "0.65rem",
+        fontWeight: 800,
+        letterSpacing: "2px",
+        fontFamily: "'Inter',sans-serif",
+      }}>
+        LOOPIX SNAP SYSTEM
+      </div>
+    </motion.div>
+  );
 }

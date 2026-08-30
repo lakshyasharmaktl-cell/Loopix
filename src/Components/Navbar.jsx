@@ -33,15 +33,13 @@ export default function Navbar() {
     () => JSON.parse(localStorage.getItem("loopix_user")) || null
   );
 
-  // ── Fix: re-sync user state whenever localStorage changes after login ──
+  // ── Re-sync user state whenever localStorage changes after login ──
   useEffect(() => {
     const syncUser = () => {
       const stored = localStorage.getItem("loopix_user");
       setUser(stored ? JSON.parse(stored) : null);
     };
-    // Fires when another tab changes localStorage
     window.addEventListener("storage", syncUser);
-    // Fires when Login/Signup on the SAME tab sets the user
     window.addEventListener("loopix-auth-change", syncUser);
     return () => {
       window.removeEventListener("storage", syncUser);
@@ -51,23 +49,33 @@ export default function Navbar() {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  // ── Auth routes: hide navbar completely (like Instagram) ──
+  const AUTH_ROUTES = ["/", "/login", "/signup", "/otp-verify"];
+  const isAuthPage = AUTH_ROUTES.some(r => r === "/" ? location.pathname === "/" : location.pathname.startsWith(r));
+
+  // Verify valid user object exists
+  const hasValidUser = user && (user.id || user._id || user.email || user.name);
+
+  if (isAuthPage || !hasValidUser) return null;
+
   const handleLogout = () => {
     localStorage.removeItem("loopix_user");
     localStorage.removeItem("auth_token");
+    window.dispatchEvent(new Event("loopix-auth-change"));
     setUser(null);
     setDropdownOpen(false);
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   const navLinks = [
     { name: "Chats",   path: "/chats",   icon: <IoChatbubblesSharp /> },
     { name: "Friends", path: "/friends", icon: <IoPeopleSharp /> },
     { name: "Snap",    path: "/camera",  icon: <FaCamera /> },
-    // { name: "Search",  path: "/search",  icon: <FiSearch /> },
     { name: "Profile", path: "/profile", icon: <FaUserCircle /> },
   ];
 
   const navStyle = {
+
     position: "sticky", top: 0, zIndex: 50,
     background: "rgba(255, 255, 255, 0.8)",
     backdropFilter: "blur(20px)",
