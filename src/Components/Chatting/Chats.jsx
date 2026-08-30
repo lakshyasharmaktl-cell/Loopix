@@ -1,4 +1,3 @@
-import React, { useState, useEffect, useRef } from 'log'
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiSearch, FiSend, FiMoreVertical, FiPhone, FiVideo, FiSmile, FiPaperclip } from 'react-icons/fi'
