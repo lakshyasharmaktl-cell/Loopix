@@ -96,11 +96,12 @@ export default function Signup() {
 
       for (const ep of endpoints) {
         try {
-          response = await axios.post(ep, formData, { timeout: 15000 });
-          if (response?.data) break;
+          response = await axios.post(ep, formData, { timeout: 10000 });
+          if (response?.data && response.data.status !== false) break;
         } catch (err) {
           lastErr = err;
-          if (err.response?.data?.msg) {
+          // If server responded with duplicate email / account exists message, throw it to inform user
+          if (err.response?.data?.msg && err.response.status === 400 && err.response.data.msg.includes("already exists")) {
             throw err;
           }
         }
@@ -116,9 +117,7 @@ export default function Signup() {
 
       localStorage.setItem("otp_email", targetEmail);
       localStorage.setItem("temp_user_name", targetName);
-      if (response?.data?.otp) {
-        localStorage.setItem("temp_otp", String(response.data.otp));
-      }
+      localStorage.removeItem("temp_otp");
 
       setSuccess("Account registered! Redirecting to verification...");
       toast.success(response?.data?.msg || "OTP sent to your email 📧");

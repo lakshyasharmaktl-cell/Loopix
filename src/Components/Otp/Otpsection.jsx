@@ -126,32 +126,8 @@ export default function OtpSection() {
 
     const targetEmail = (email || localStorage.getItem('otp_email') || '').trim();
     const targetId = id && id !== 'undefined' && id !== ':id' ? id : '';
-    const storedOtp = localStorage.getItem('temp_otp');
 
-    // Test bypass / fallback codes
-    if (id === 'demo' || otpValue === '1234' || (storedOtp && otpValue === storedOtp)) {
-      const userName = location.state?.name || localStorage.getItem('temp_user_name') || (targetEmail ? targetEmail.split('@')[0] : 'User');
-      const fallbackUser = {
-        id: targetId || 'user_' + Date.now(),
-        _id: targetId || 'user_' + Date.now(),
-        name: userName,
-        email: targetEmail || 'user@loopix.com',
-      };
-      localStorage.setItem('loopix_user', JSON.stringify(fallbackUser));
-      localStorage.setItem('auth_token', 'token_' + Date.now());
-      window.dispatchEvent(new Event('loopix-auth-change'));
-
-      localStorage.removeItem('otp_email');
-      localStorage.removeItem('temp_otp');
-      localStorage.removeItem('temp_user_name');
-      setSuccess('Account verified! Welcome to Loopix 🎉');
-      toast.success('Account verified successfully! 🎉');
-      setTimeout(() => navigate('/chats', { replace: true }), 1000);
-      setLoading(false);
-      return;
-    }
-
-    // Candidate base URLs to ensure both local dev and production Render backend work seamlessly
+    // Candidate base URLs to ensure both production Render backend and local dev work seamlessly
     const candidateUrls = [
       'http://localhost:2345',
       BASE_URL,
@@ -159,7 +135,7 @@ export default function OtpSection() {
     ];
 
     let verifiedRes = null;
-    let lastError = null;
+    let backendErrorMsg = '';
 
     for (const baseUrl of candidateUrls) {
       if (verifiedRes) break;
@@ -167,51 +143,49 @@ export default function OtpSection() {
       const attempts = [];
       if (targetId) {
         attempts.push({ url: `${baseUrl}/verify-otp/${targetId}`, data: { otp: otpValue, email: targetEmail, id: targetId } });
-        attempts.push({ url: `${baseUrl}/verify-otp/${targetId}`, data: { otp: Number(otpValue), email: targetEmail, id: targetId } });
-        attempts.push({ url: `${baseUrl}/otp-verify/${targetId}`, data: { otp: otpValue, email: targetEmail } });
-        attempts.push({ url: `${baseUrl}/verify/${targetId}`, data: { otp: otpValue, email: targetEmail } });
+        attempts.push({ url: `${baseUrl}/verify-otp`, data: { otp: otpValue, email: targetEmail, id: targetId, userId: targetId } });
+      } else {
+        attempts.push({ url: `${baseUrl}/verify-otp`, data: { otp: otpValue, email: targetEmail } });
       }
-      attempts.push({ url: `${baseUrl}/verify-otp`, data: { otp: otpValue, email: targetEmail, id: targetId, userId: targetId } });
-      attempts.push({ url: `${baseUrl}/verify-otp`, data: { otp: Number(otpValue), email: targetEmail, id: targetId, userId: targetId } });
-      attempts.push({ url: `${baseUrl}/otp-verify`, data: { otp: otpValue, email: targetEmail, id: targetId } });
-      attempts.push({ url: `${baseUrl}/verify`, data: { otp: otpValue, email: targetEmail, id: targetId } });
 
       for (const attempt of attempts) {
         try {
-          const res = await axios.post(attempt.url, attempt.data, { timeout: 12000 });
+          const res = await axios.post(attempt.url, attempt.data, { timeout: 8000 });
           if (res && res.status >= 200 && res.status < 300) {
             if (res.data && res.data.status === false) {
-              lastError = new Error(res.data.msg || 'Invalid verification code');
+              backendErrorMsg = res.data.msg || 'Invalid verification code';
               continue;
             }
             verifiedRes = res;
             break;
           }
         } catch (err) {
-          lastError = err;
+          if (err.response?.data?.msg) {
+            backendErrorMsg = err.response.data.msg;
+          }
         }
       }
     }
 
-    if (!verifiedRes) {
-      console.error('OTP verification failed across candidates:', lastError);
-      const errMsg = lastError?.response?.data?.msg || lastError?.message || 'Invalid verification code. Please check your email or try 1234.';
+    let finalUser = null;
+    let finalToken = null;
+
+    if (verifiedRes && verifiedRes.data && verifiedRes.data.status !== false) {
+      const resData = verifiedRes.data || {};
+      finalUser = resData.user || resData.data?.user || resData.data || {
+        id: resData.id || resData._id || targetId || 'user_' + Date.now(),
+        _id: resData._id || resData.id || targetId || 'user_' + Date.now(),
+        name: resData.name || location.state?.name || localStorage.getItem('temp_user_name') || (targetEmail ? targetEmail.split('@')[0] : 'User'),
+        email: targetEmail || resData.email || 'user@loopix.com',
+      };
+      finalToken = resData.token || resData.accessToken || resData.data?.token || ('auth_token_' + Date.now());
+    } else {
+      const errMsg = backendErrorMsg || 'Incorrect OTP code. Please check your email and try again.';
       setError(errMsg);
       toast.error(errMsg);
       setLoading(false);
       return;
     }
-
-    // Success response parsing
-    const resData = verifiedRes.data || {};
-    const finalUser = resData.user || resData.data?.user || resData.data || {
-      id: resData.id || resData._id || targetId || 'user_' + Date.now(),
-      _id: resData._id || resData.id || targetId || 'user_' + Date.now(),
-      name: resData.name || location.state?.name || localStorage.getItem('temp_user_name') || (targetEmail ? targetEmail.split('@')[0] : 'User'),
-      email: targetEmail || resData.email || 'user@loopix.com',
-    };
-
-    const finalToken = resData.token || resData.accessToken || resData.data?.token || ('auth_token_' + Date.now());
 
     localStorage.setItem('loopix_user', JSON.stringify(finalUser));
     localStorage.setItem('auth_token', finalToken);
@@ -254,17 +228,11 @@ export default function OtpSection() {
 
     for (const baseUrl of candidateUrls) {
       try {
-        await axios.post(`${baseUrl}/resend-otp`, { email: targetEmail }, { timeout: 15000 });
+        await axios.post(`${baseUrl}/resend-otp`, { email: targetEmail }, { timeout: 10000 });
         resendSuccess = true;
         break;
       } catch (e1) {
-        try {
-          await axios.post(`${baseUrl}/register`, { email: targetEmail }, { timeout: 15000 });
-          resendSuccess = true;
-          break;
-        } catch (e2) {
-          lastError = e1.response?.data?.msg ? e1 : e2;
-        }
+        lastError = e1;
       }
     }
 
@@ -453,41 +421,7 @@ export default function OtpSection() {
             </div>
           )}
 
-          {/* Quick OTP Autofill helper if cached */}
-          {localStorage.getItem('temp_otp') && (
-            <div
-              style={{
-                marginBottom: '1.25rem',
-                padding: '0.5rem 0.75rem',
-                background: isDark ? 'rgba(234, 88, 12, 0.15)' : '#fff7ed',
-                border: isDark ? '1px solid rgba(234, 88, 12, 0.3)' : '1px solid #ffedd5',
-                borderRadius: '10px',
-                textAlign: 'center',
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  const code = localStorage.getItem('temp_otp') || '';
-                  if (code.length === 4) {
-                    setOtp(code.split(''));
-                    toast.info('Filled verification code! 🎉');
-                  }
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: isDark ? '#fb923c' : '#ea580c',
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  textDecoration: 'underline',
-                }}
-              >
-                Tap here to auto-fill OTP ({localStorage.getItem('temp_otp')})
-              </button>
-            </div>
-          )}
+
 
           {/* Error & Success Alerts */}
           <AnimatePresence>
