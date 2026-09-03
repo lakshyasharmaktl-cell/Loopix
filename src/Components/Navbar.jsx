@@ -78,10 +78,10 @@ export default function Navbar() {
 
   const navStyle = {
     position: "sticky", top: 0, zIndex: 50,
-    background: isDark ? "rgba(15, 23, 42, 0.88)" : "rgba(255, 255, 255, 0.85)",
+    background: isDark ? "rgba(9, 9, 11, 0.92)" : "rgba(255, 255, 255, 0.85)",
     backdropFilter: "blur(20px)",
-    borderBottom: isDark ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid rgba(0, 0, 0, 0.05)",
-    boxShadow: isDark ? "0 4px 30px rgba(0, 0, 0, 0.3)" : "0 4px 30px rgba(0, 0, 0, 0.02)",
+    borderBottom: isDark ? "1px solid #27272a" : "1px solid rgba(0, 0, 0, 0.05)",
+    boxShadow: isDark ? "0 4px 30px rgba(0, 0, 0, 0.8)" : "0 4px 30px rgba(0, 0, 0, 0.02)",
     fontFamily: "'Inter','Segoe UI',sans-serif",
     transition: "background 0.3s ease, border-color 0.3s ease"
   };
@@ -120,11 +120,15 @@ export default function Navbar() {
                   <LoopixMark size={34} />
                 </motion.div>
                 <span style={{
+                  display: "inline-block",
                   fontSize: "1.375rem", fontWeight: "900", letterSpacing: "3px",
                   background: isDark
                     ? "linear-gradient(90deg, #ffffff 0%, #ef4444 60%, #dc2626 100%)"
                     : "linear-gradient(90deg, #111827 0%, #dc2626 60%, #991b1b 100%)",
-                  WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  color: "transparent",
                 }}>LOOPIX</span>
               </motion.div>
             </Link>

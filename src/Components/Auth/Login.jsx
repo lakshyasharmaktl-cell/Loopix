@@ -99,23 +99,23 @@ export default function Login() {
   const labelStyle = {
     display: "block", marginBottom: "0.375rem",
     fontSize: "0.65rem", fontWeight: "700",
-    color: isDark ? "#cbd5e1" : "#4b5563", letterSpacing: "2px",
+    color: isDark ? "#a1a1aa" : "#4b5563", letterSpacing: "2px",
   };
 
   const inputStyle = {
     width: "100%", paddingTop: "0.7rem", paddingBottom: "0.7rem",
     paddingLeft: "2.5rem", paddingRight: "2.5rem",
-    background: isDark ? "#0f172a" : "#f9fafb",
-    border: isDark ? "1px solid #475569" : "1px solid #d1d5db",
-    borderRadius: "12px", color: isDark ? "#f8fafc" : "#111827",
+    background: isDark ? "#121212" : "#f9fafb",
+    border: isDark ? "1px solid #27272a" : "1px solid #d1d5db",
+    borderRadius: "12px", color: isDark ? "#f4f4f5" : "#111827",
     fontSize: "0.875rem", transition: "all 0.2s ease", boxSizing: "border-box",
   };
 
   const socialBtnStyle = {
     flex: 1, padding: "0.65rem",
-    borderRadius: "12px", border: isDark ? "1px solid #475569" : "1px solid #d1d5db",
-    background: isDark ? "#0f172a" : "#ffffff",
-    color: isDark ? "#f8fafc" : "#374151", fontSize: "0.8rem", fontWeight: "600",
+    borderRadius: "12px", border: isDark ? "1px solid #27272a" : "1px solid #d1d5db",
+    background: isDark ? "#121212" : "#ffffff",
+    color: isDark ? "#f4f4f5" : "#374151", fontSize: "0.8rem", fontWeight: "600",
     display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
     cursor: "pointer", transition: "all 0.2s ease",
   };
@@ -124,7 +124,7 @@ export default function Login() {
     <div style={{
       minHeight: "100vh",
       background: isDark
-        ? "linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e293b 100%)"
+        ? "#000000"
         : "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 50%, #e5e7eb 100%)",
       display: "flex",
       alignItems: "center",
@@ -142,11 +142,11 @@ export default function Login() {
         style={{
           position: "absolute", top: "20px", right: "20px", zIndex: 20,
           width: "40px", height: "40px", borderRadius: "50%",
-          border: isDark ? "1px solid #334155" : "1px solid #e5e7eb",
-          background: isDark ? "#1e293b" : "#ffffff",
+          border: isDark ? "1px solid #27272a" : "1px solid #e5e7eb",
+          background: isDark ? "#09090b" : "#ffffff",
           color: isDark ? "#fbbf24" : "#4b5563",
           cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "1.1rem", boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          fontSize: "1.1rem", boxShadow: isDark ? "0 4px 12px rgba(0,0,0,0.5)" : "0 4px 12px rgba(0,0,0,0.1)",
           transition: "all 0.2s ease"
         }}
       >
@@ -154,18 +154,22 @@ export default function Login() {
       </button>
 
       {/* Background blobs */}
-      <div style={{
-        position: "fixed", top: 0, right: 0,
-        width: "500px", height: "500px",
-        background: "radial-gradient(circle, rgba(220,38,38,0.08) 0%, transparent 70%)",
-        transform: "translate(30%, -30%)", pointerEvents: "none"
-      }} />
-      <div style={{
-        position: "fixed", bottom: 0, left: 0,
-        width: "400px", height: "400px",
-        background: "radial-gradient(circle, rgba(220,38,38,0.05) 0%, transparent 70%)",
-        transform: "translate(-30%, 30%)", pointerEvents: "none"
-      }} />
+      {!isDark && (
+        <>
+          <div style={{
+            position: "fixed", top: 0, right: 0,
+            width: "500px", height: "500px",
+            background: "radial-gradient(circle, rgba(220,38,38,0.08) 0%, transparent 70%)",
+            transform: "translate(30%, -30%)", pointerEvents: "none"
+          }} />
+          <div style={{
+            position: "fixed", bottom: 0, left: 0,
+            width: "400px", height: "400px",
+            background: "radial-gradient(circle, rgba(220,38,38,0.05) 0%, transparent 70%)",
+            transform: "translate(-30%, 30%)", pointerEvents: "none"
+          }} />
+        </>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 28, scale: 0.97 }}
@@ -176,16 +180,18 @@ export default function Login() {
           zIndex: 10,
           width: "100%",
           maxWidth: "420px",
-          background: isDark ? "rgba(30, 41, 59, 0.85)" : "rgba(255, 255, 255, 0.8)",
+          background: isDark ? "#09090b" : "rgba(255, 255, 255, 0.8)",
           backdropFilter: "blur(24px)",
-          border: isDark ? "1px solid rgba(255, 255, 255, 0.1)" : "1px solid rgba(0, 0, 0, 0.06)",
+          border: isDark ? "1px solid #27272a" : "1px solid rgba(0, 0, 0, 0.06)",
           borderRadius: "24px",
-          boxShadow: isDark ? "0 25px 50px -12px rgba(0, 0, 0, 0.5)" : "0 25px 50px -12px rgba(0, 0, 0, 0.08)",
+          boxShadow: isDark ? "0 25px 50px -12px rgba(0, 0, 0, 0.9)" : "0 25px 50px -12px rgba(0, 0, 0, 0.08)",
           overflow: "hidden",
         }}
       >
         {/* Top brand line */}
-        <div style={{ height: "3px", background: "linear-gradient(90deg, #ff8a8a, #dc2626, #ff8a8a)" }} />
+        {!isDark && (
+          <div style={{ height: "3px", background: "linear-gradient(90deg, #ff8a8a, #dc2626, #ff8a8a)" }} />
+        )}
 
         <div style={{ padding: "2.5rem 2rem" }}>
           {/* Logo */}
@@ -198,13 +204,17 @@ export default function Login() {
               <LoopixMark size={52} />
             </motion.div>
             <span style={{
+              display: "inline-block",
               fontSize: "1.875rem", fontWeight: "900", letterSpacing: "4px",
               background: isDark
                 ? "linear-gradient(90deg, #ffffff 0%, #ef4444 60%, #dc2626 100%)"
                 : "linear-gradient(90deg, #111827 0%, #dc2626 60%, #991b1b 100%)",
-              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent"
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              color: "transparent",
             }}>LOOPIX</span>
-            <span style={{ marginTop: "0.375rem", fontSize: "0.65rem", fontWeight: "700", color: isDark ? "#94a3b8" : "#6b7280", letterSpacing: "4px" }}>
+            <span style={{ marginTop: "0.375rem", fontSize: "0.65rem", fontWeight: "700", color: isDark ? "#a1a1aa" : "#6b7280", letterSpacing: "4px" }}>
               WELCOME BACK
             </span>
           </div>
@@ -273,7 +283,7 @@ export default function Login() {
 
             {/* Forgot */}
             <div style={{ textAlign: "right", marginTop: "0.5rem" }}>
-              <Link to="/forgot-password" style={{ fontSize: "0.75rem", color: isDark ? "#94a3b8" : "#6b7280", textDecoration: "none", fontWeight: "500" }}>
+              <Link to="/forgot-password" style={{ fontSize: "0.75rem", color: isDark ? "#a1a1aa" : "#6b7280", textDecoration: "none", fontWeight: "500" }}>
                 Forgot password?
               </Link>
             </div>
@@ -291,7 +301,7 @@ export default function Login() {
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
                 transition: "all 0.2s ease", border: "none", cursor: loading ? "not-allowed" : "pointer",
                 background: loading ? "#cbd5e1" : "linear-gradient(135deg, #dc2626, #b91c1c)",
-                boxShadow: loading ? "none" : "0 8px 24px rgba(220, 38, 38, 0.2)",
+                boxShadow: loading ? "none" : "0 8px 24px rgba(220, 38, 38, 0.25)",
               }}
             >
               {loading ? (
@@ -310,9 +320,9 @@ export default function Login() {
 
           {/* Divider */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", margin: "1.5rem 0" }}>
-            <div style={{ flex: 1, height: "1px", background: isDark ? "#334155" : "#e5e7eb" }} />
-            <span style={{ fontSize: "0.65rem", fontWeight: "700", color: isDark ? "#64748b" : "#9ca3af", letterSpacing: "3px" }}>OR</span>
-            <div style={{ flex: 1, height: "1px", background: isDark ? "#334155" : "#e5e7eb" }} />
+            <div style={{ flex: 1, height: "1px", background: isDark ? "#27272a" : "#e5e7eb" }} />
+            <span style={{ fontSize: "0.65rem", fontWeight: "700", color: isDark ? "#71717a" : "#9ca3af", letterSpacing: "3px" }}>OR</span>
+            <div style={{ flex: 1, height: "1px", background: isDark ? "#27272a" : "#e5e7eb" }} />
           </div>
 
           {/* Social */}
@@ -321,12 +331,12 @@ export default function Login() {
               <FaGoogle style={{ color: "#EA4335" }} /> Google
             </button>
             <button style={socialBtnStyle}>
-              <FaGithub style={{ color: isDark ? "#f8fafc" : "#181717" }} /> GitHub
+              <FaGithub style={{ color: isDark ? "#f4f4f5" : "#181717" }} /> GitHub
             </button>
           </div>
 
           {/* Footer */}
-          <p style={{ textAlign: "center", fontSize: "0.85rem", color: isDark ? "#94a3b8" : "#4b5563", marginTop: "1.5rem" }}>
+          <p style={{ textAlign: "center", fontSize: "0.85rem", color: isDark ? "#a1a1aa" : "#4b5563", marginTop: "1.5rem" }}>
             Don't have an account?{" "}
             <Link to="/signup" style={{ color: "#ef4444", fontWeight: "700", textDecoration: "none" }}>
               Sign up
@@ -336,7 +346,7 @@ export default function Login() {
       </motion.div>
 
       <style>{`
-        input::placeholder { color: ${isDark ? '#64748b' : '#9ca3af'} !important; }
+        input::placeholder { color: ${isDark ? '#52525b' : '#9ca3af'} !important; }
         input:focus { outline: none !important; border-color: rgba(220,38,38,0.5) !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.15) !important; }
       `}</style>
     </div>

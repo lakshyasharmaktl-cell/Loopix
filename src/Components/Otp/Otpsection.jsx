@@ -259,7 +259,7 @@ export default function OtpSection() {
       style={{
         minHeight: '100vh',
         background: isDark
-          ? 'linear-gradient(145deg, #020617 0%, #0f172a 50%, #1e293b 100%)'
+          ? '#000000'
           : 'linear-gradient(145deg, #fafaf9 0%, #f5f3f0 50%, #fdf8f8 100%)',
         display: 'flex',
         alignItems: 'center',
@@ -283,15 +283,15 @@ export default function OtpSection() {
           width: '40px',
           height: '40px',
           borderRadius: '50%',
-          border: isDark ? '1px solid #334155' : '1px solid #e5e7eb',
-          background: isDark ? '#1e293b' : '#ffffff',
+          border: isDark ? '1px solid #27272a' : '1px solid #e5e7eb',
+          background: isDark ? '#09090b' : '#ffffff',
           color: isDark ? '#fbbf24' : '#4b5563',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontSize: '1.1rem',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          boxShadow: isDark ? '0 4px 12px rgba(0,0,0,0.5)' : '0 4px 12px rgba(0,0,0,0.1)',
           transition: 'all 0.2s ease',
         }}
       >
@@ -299,30 +299,34 @@ export default function OtpSection() {
       </button>
 
       {/* Ambient glowing background blobs */}
-      <div
-        style={{
-          position: 'fixed',
-          top: '-80px',
-          right: '-80px',
-          width: '320px',
-          height: '320px',
-          background: 'radial-gradient(circle, rgba(220,38,38,0.12) 0%, transparent 70%)',
-          borderRadius: '50%',
-          pointerEvents: 'none',
-        }}
-      />
-      <div
-        style={{
-          position: 'fixed',
-          bottom: '-80px',
-          left: '-80px',
-          width: '280px',
-          height: '280px',
-          background: 'radial-gradient(circle, rgba(220,38,38,0.08) 0%, transparent 70%)',
-          borderRadius: '50%',
-          pointerEvents: 'none',
-        }}
-      />
+      {!isDark && (
+        <>
+          <div
+            style={{
+              position: 'fixed',
+              top: '-80px',
+              right: '-80px',
+              width: '320px',
+              height: '320px',
+              background: 'radial-gradient(circle, rgba(220,38,38,0.12) 0%, transparent 70%)',
+              borderRadius: '50%',
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              bottom: '-80px',
+              left: '-80px',
+              width: '280px',
+              height: '280px',
+              background: 'radial-gradient(circle, rgba(220,38,38,0.08) 0%, transparent 70%)',
+              borderRadius: '50%',
+              pointerEvents: 'none',
+            }}
+          />
+        </>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
@@ -331,18 +335,20 @@ export default function OtpSection() {
         style={{
           width: '100%',
           maxWidth: '420px',
-          background: isDark ? '#1e293b' : '#fff',
+          background: isDark ? '#09090b' : '#fff',
           borderRadius: '24px',
           boxShadow: isDark
-            ? '0 20px 60px rgba(0,0,0,0.5)'
+            ? '0 20px 60px rgba(0,0,0,0.9)'
             : '0 4px 6px rgba(0,0,0,0.03), 0 20px 60px rgba(0,0,0,0.08)',
-          border: isDark ? '1px solid #334155' : '1px solid rgba(0,0,0,0.06)',
+          border: isDark ? '1px solid #27272a' : '1px solid rgba(0,0,0,0.06)',
           overflow: 'hidden',
           zIndex: 10,
         }}
       >
         {/* Red top accent bar */}
-        <div style={{ height: '3px', background: 'linear-gradient(90deg, #ef4444, #dc2626, #ef4444)' }} />
+        {!isDark && (
+          <div style={{ height: '3px', background: 'linear-gradient(90deg, #ef4444, #dc2626, #ef4444)' }} />
+        )}
 
         <div style={{ padding: '2.25rem 2rem' }}>
           {/* Logo & Header */}
@@ -356,6 +362,7 @@ export default function OtpSection() {
             </motion.div>
             <span
               style={{
+                display: 'inline-block',
                 fontSize: '1.625rem',
                 fontWeight: '900',
                 letterSpacing: '4px',
@@ -363,7 +370,9 @@ export default function OtpSection() {
                   ? 'linear-gradient(90deg, #ffffff, #ef4444)'
                   : 'linear-gradient(90deg, #1a1a1a, #dc2626)',
                 WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
+                color: 'transparent',
               }}
             >
               LOOPIX
@@ -373,7 +382,7 @@ export default function OtpSection() {
                 marginTop: '0.25rem',
                 fontSize: '0.65rem',
                 fontWeight: '700',
-                color: isDark ? '#94a3b8' : '#9ca3af',
+                color: isDark ? '#a1a1aa' : '#9ca3af',
                 letterSpacing: '3px',
               }}
             >
