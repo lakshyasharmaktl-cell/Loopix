@@ -119,17 +119,17 @@ export default function Navbar() {
                 <motion.div animate={{ rotate: [0, 6, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
                   <LoopixMark size={34} />
                 </motion.div>
-                <span style={{
-                  display: "inline-block",
-                  fontSize: "1.375rem", fontWeight: "900", letterSpacing: "3px",
-                  background: isDark
-                    ? "linear-gradient(90deg, #ffffff 0%, #ef4444 60%, #dc2626 100%)"
-                    : "linear-gradient(90deg, #111827 0%, #dc2626 60%, #991b1b 100%)",
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  color: "transparent",
-                }}>LOOPIX</span>
+                <span
+                  className="loopix-brand-title"
+                  style={{
+                    display: "inline-block",
+                    fontSize: "1.375rem",
+                    fontWeight: "900",
+                    letterSpacing: "3px",
+                  }}
+                >
+                  LOOPIX
+                </span>
               </motion.div>
             </Link>
 

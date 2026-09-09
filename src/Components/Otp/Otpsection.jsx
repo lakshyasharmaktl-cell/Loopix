@@ -361,18 +361,12 @@ export default function OtpSection() {
               <LoopixMark size={50} />
             </motion.div>
             <span
+              className="loopix-brand-title"
               style={{
                 display: 'inline-block',
                 fontSize: '1.625rem',
                 fontWeight: '900',
                 letterSpacing: '4px',
-                background: isDark
-                  ? 'linear-gradient(90deg, #ffffff, #ef4444)'
-                  : 'linear-gradient(90deg, #1a1a1a, #dc2626)',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                color: 'transparent',
               }}
             >
               LOOPIX

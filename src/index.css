@@ -49,8 +49,25 @@ html, body, #root {
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-main); }
-::-webkit-scrollbar-thumb { background: rgba(220, 38, 38, 0.35); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(220, 38, 38, 0.65); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Cross-browser brand gradient text */
+.loopix-brand-title {
+  background: linear-gradient(90deg, #111827 0%, #dc2626 60%, #991b1b 100%);
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+}
+
+.dark .loopix-brand-title {
+  background: linear-gradient(90deg, #ffffff 0%, #ef4444 60%, #dc2626 100%);
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+}
 
 /* Toast notifications adaptation */
 .Toastify__toast {

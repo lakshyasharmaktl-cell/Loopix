@@ -203,17 +203,17 @@ export default function Login() {
             >
               <LoopixMark size={52} />
             </motion.div>
-            <span style={{
-              display: "inline-block",
-              fontSize: "1.875rem", fontWeight: "900", letterSpacing: "4px",
-              background: isDark
-                ? "linear-gradient(90deg, #ffffff 0%, #ef4444 60%, #dc2626 100%)"
-                : "linear-gradient(90deg, #111827 0%, #dc2626 60%, #991b1b 100%)",
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              color: "transparent",
-            }}>LOOPIX</span>
+            <span
+              className="loopix-brand-title"
+              style={{
+                display: "inline-block",
+                fontSize: "1.875rem",
+                fontWeight: "900",
+                letterSpacing: "4px",
+              }}
+            >
+              LOOPIX
+            </span>
             <span style={{ marginTop: "0.375rem", fontSize: "0.65rem", fontWeight: "700", color: isDark ? "#a1a1aa" : "#6b7280", letterSpacing: "4px" }}>
               WELCOME BACK
             </span>

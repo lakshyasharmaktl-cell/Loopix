@@ -294,18 +294,12 @@ export default function Signup() {
               <LoopixMark size={52} />
             </motion.div>
             <span
+              className="loopix-brand-title"
               style={{
                 display: "inline-block",
                 fontSize: "1.875rem",
                 fontWeight: "900",
                 letterSpacing: "4px",
-                background: isDark
-                  ? "linear-gradient(90deg, #ffffff 0%, #ef4444 60%, #dc2626 100%)"
-                  : "linear-gradient(90deg, #111827 0%, #dc2626 60%, #991b1b 100%)",
-                WebkitBackgroundClip: "text",
-                backgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                color: "transparent",
               }}
             >
               LOOPIX
