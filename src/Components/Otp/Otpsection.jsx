@@ -128,10 +128,10 @@ export default function OtpSection() {
     const targetId = id && id !== 'undefined' && id !== ':id' ? id : '';
 
     // Candidate base URLs to ensure both production Render backend and local dev work seamlessly
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
     const candidateUrls = [
       BASE_URL,
-      'http://localhost:2345',
-      'http://127.0.0.1:2345'
+      ...(isLocal ? ['http://localhost:2345', 'http://127.0.0.1:2345'] : [])
     ].filter((v, i, a) => a.indexOf(v) === i);
 
     let verifiedRes = null;
@@ -217,10 +217,10 @@ export default function OtpSection() {
     setError('');
     setSuccess('');
 
+    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
     const candidateUrls = [
       BASE_URL,
-      'http://localhost:2345',
-      'http://127.0.0.1:2345'
+      ...(isLocal ? ['http://localhost:2345', 'http://127.0.0.1:2345'] : [])
     ].filter((v, i, a) => a.indexOf(v) === i);
 
     let resendSuccess = false;

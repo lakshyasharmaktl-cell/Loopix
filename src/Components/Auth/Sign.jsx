@@ -144,10 +144,12 @@ export default function Signup() {
       // API ENDPOINTS
       // -----------------------------
 
+      const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
       const endpoints = [
         `${BASE_URL}/register`,
         "https://backendlakshya-2.onrender.com/register",
-        "http://127.0.0.1:2345/register",
+        ...(isLocal ? ["http://127.0.0.1:2345/register"] : []),
       ].filter((v, i, a) => a.indexOf(v) === i);
 
       // -----------------------------
