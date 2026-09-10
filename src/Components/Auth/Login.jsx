@@ -55,8 +55,8 @@ export default function Login() {
       toast.info("Waking up server, please wait a moment... ⏳", { autoClose: 5000 });
     }, 3500);
 
-    try {
-      const response = await axios.post(`${BASE_URL}/login`, {
+    try { 
+      const response =await axios.post(`${BASE_URL}/login`, {
         email: form.email,
         password: form.password,
       }, { timeout: 60000 });

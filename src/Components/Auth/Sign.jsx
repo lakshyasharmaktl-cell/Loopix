@@ -88,10 +88,9 @@ export default function Signup() {
       let lastErr = null;
 
       // Try candidates to support local and remote backends
-      const endpoints = [
+      const endpoints =await axios.post [
         "https://backendlakshya-2.onrender.com/register",
-        `${BASE_URL}/register`,
-        "http://127.0.0.1:2345/register",
+        `${BASE_URL}/register`
       ];
 
       for (const ep of endpoints) {
