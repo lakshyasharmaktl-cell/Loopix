@@ -129,10 +129,10 @@ export default function OtpSection() {
 
     // Candidate base URLs to ensure both production Render backend and local dev work seamlessly
     const candidateUrls = [
-      'http://localhost:2345',
       BASE_URL,
+      'http://localhost:2345',
       'http://127.0.0.1:2345'
-    ];
+    ].filter((v, i, a) => a.indexOf(v) === i);
 
     let verifiedRes = null;
     let backendErrorMsg = '';
@@ -150,7 +150,7 @@ export default function OtpSection() {
 
       for (const attempt of attempts) {
         try {
-          const res = await axios.post(attempt.url, attempt.data, { timeout: 8000 });
+          const res = await axios.post(attempt.url, attempt.data, { timeout: 40000 });
           if (res && res.status >= 200 && res.status < 300) {
             if (res.data && res.data.status === false) {
               backendErrorMsg = res.data.msg || 'Invalid verification code';
@@ -218,17 +218,17 @@ export default function OtpSection() {
     setSuccess('');
 
     const candidateUrls = [
-      'http://localhost:2345',
       BASE_URL,
+      'http://localhost:2345',
       'http://127.0.0.1:2345'
-    ];
+    ].filter((v, i, a) => a.indexOf(v) === i);
 
     let resendSuccess = false;
     let lastError = null;
 
     for (const baseUrl of candidateUrls) {
       try {
-        await axios.post(`${baseUrl}/resend-otp`, { email: targetEmail }, { timeout: 10000 });
+        await axios.post(`${baseUrl}/resend-otp`, { email: targetEmail }, { timeout: 40000 });
         resendSuccess = true;
         break;
       } catch (e1) {

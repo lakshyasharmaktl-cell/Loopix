@@ -130,19 +130,25 @@ export default function Signup() {
     // -----------------------------
 
     setLoading(true);
+    let wakeupTimer = null;
+
     try {
       let response = null;
       let lastErr = null;
+
+      wakeupTimer = setTimeout(() => {
+        toast.info("Waking up server, please wait a moment... ⏳", { autoClose: 5000 });
+      }, 3500);
 
       // -----------------------------
       // API ENDPOINTS
       // -----------------------------
 
       const endpoints = [
-        "https://backendlakshya-2.onrender.com/register",
         `${BASE_URL}/register`,
+        "https://backendlakshya-2.onrender.com/register",
         "http://127.0.0.1:2345/register",
-      ];
+      ].filter((v, i, a) => a.indexOf(v) === i);
 
       // -----------------------------
       // DATA SENT TO BACKEND
@@ -169,7 +175,7 @@ export default function Signup() {
           console.log("Trying register API:", ep);
 
           response = await axios.post(ep, userData, {
-            timeout: 15000,
+            timeout: 60000,
             headers: {
               "Content-Type": "application/json",
             },
@@ -301,6 +307,7 @@ export default function Signup() {
       setError(msg);
       toast.error(msg);
     } finally {
+      if (wakeupTimer) clearTimeout(wakeupTimer);
       setLoading(false);
     }
   };
