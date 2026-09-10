@@ -1,0 +1,6 @@
+# Robots.txt for Loopix
+User-agent: *
+Allow: /
+
+# Sitemap Location
+Sitemap: https://loopix.app/sitemap.xml

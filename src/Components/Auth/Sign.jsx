@@ -89,7 +89,7 @@ export default function Signup() {
 
       // Try candidates to support local and remote backends
       const endpoints = [
-        "http://localhost:2345/register",
+        "https://backendlakshya-2.onrender.com/register",
         `${BASE_URL}/register`,
         "http://127.0.0.1:2345/register",
       ];
